@@ -13,5 +13,5 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     List<Issue> findByAssignedTechnicianEmailOrderByCreatedAtDesc(String assignedTechnicianEmail);
 
-    List<Issue> findByStatusNotOrderByIdDesc(String status);
+    List<Issue> findByVisibleToAdminTrueOrderByIdDesc();
 }

@@ -35,8 +35,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<IssueResponse> getAdminIssues() {
-        return issueRepository.findByStatusNotOrderByIdDesc("CLOSED")
+        return issueRepository.findByVisibleToAdminTrueOrderByIdDesc()
                 .stream()
+                .filter(issue -> !"CLOSED".equalsIgnoreCase(issue.getStatus()))
                 .map(this::mapToIssueResponse)
                 .toList();
     }
@@ -119,15 +120,19 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
         if (!"RESOLVED".equalsIgnoreCase(issue.getStatus())) {
-            throw new IllegalArgumentException("Only resolved issues can be deleted by admin.");
+            throw new IllegalArgumentException("Only resolved issues can be removed from admin workflow.");
         }
 
-        issueRepository.delete(issue);
+        issue.setVisibleToAdmin(false);
+        issueRepository.save(issue);
     }
 
     @Override
     public Map<String, Long> getSummary() {
-        List<Issue> issues = issueRepository.findByStatusNotOrderByIdDesc("CLOSED");
+        List<Issue> issues = issueRepository.findByVisibleToAdminTrueOrderByIdDesc()
+                .stream()
+                .filter(i -> !"CLOSED".equalsIgnoreCase(i.getStatus()))
+                .toList();
 
         Map<String, Long> summary = new LinkedHashMap<>();
         summary.put("total", (long) issues.size());
