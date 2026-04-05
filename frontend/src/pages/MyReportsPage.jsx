@@ -1,0 +1,626 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { closeIssue, deleteIssue, getMyIssues } from "../api/issueApi";
+
+export default function MyReportsPage() {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const pageTitle = "My Reports";
+  const pageSubtitle = "Tickets you created, with the newest reports at the top.";
+  const emptyMessage = "You have not submitted any reports yet.";
+
+  useEffect(() => {
+    fetchMyIssues();
+  }, []);
+
+  const fetchMyIssues = async () => {
+    try {
+      setLoading(true);
+      const response = await getMyIssues();
+      setTickets(response.data);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load your reports.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseIssue = async (id) => {
+    const confirmed = window.confirm("Close this ticket?");
+    if (!confirmed) return;
+
+    try {
+      await closeIssue(id);
+      fetchMyIssues();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to close ticket.");
+    }
+  };
+
+  const handleDeleteIssue = async (id) => {
+    const confirmed = window.confirm("Delete this closed ticket?");
+    if (!confirmed) return;
+
+    try {
+      await deleteIssue(id);
+      fetchMyIssues();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete ticket.");
+    }
+  };
+
+    const formatDateTime = (value) => {
+    if (!value) return "Just now";
+
+    const normalized = value.replace("T", " ").split(".")[0];
+    const date = new Date(normalized);
+
+    if (Number.isNaN(date.getTime())) return "Just now";
+
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const shortenText = (text, max = 220) => {
+    if (!text) return "";
+    return text.length > max ? text.substring(0, max) + "..." : text;
+  };
+
+  return (
+    <>
+      <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: Arial, sans-serif;
+        }
+
+        body {
+          background: #f6f7f8;
+          color: #1f2937;
+        }
+
+        .page-shell {
+          max-width: 1320px;
+          margin: 0 auto;
+          padding: 28px 24px 56px;
+        }
+
+        .layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 320px;
+          gap: 28px;
+          align-items: start;
+        }
+
+        .main-column {
+          min-width: 0;
+        }
+
+        .page-header {
+          padding: 8px 4px 20px;
+          margin-bottom: 6px;
+        }
+
+        .page-eyebrow {
+          display: inline-block;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #2563eb;
+          margin-bottom: 10px;
+        }
+
+        .page-title {
+          font-size: 50px;
+          line-height: 1.05;
+          font-weight: 800;
+          color: #111827;
+          margin-bottom: 12px;
+          letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+          font-size: 18px;
+          line-height: 1.75;
+          color: #667085;
+          max-width: 860px;
+        }
+
+        .feed-shell {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .feed-card {
+          background: #ffffff;
+          border: 1px solid #e7ebf0;
+          border-radius: 22px;
+          padding: 22px 24px 18px;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
+        }
+
+        .feed-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+          border-color: #d9e2ec;
+        }
+
+        .feed-link {
+          display: block;
+          text-decoration: none;
+          color: inherit;
+        }
+
+        .feed-meta-top {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 10px;
+          font-size: 13px;
+          color: #7b8794;
+        }
+
+        .feed-meta-author {
+          font-weight: 700;
+          color: #344054;
+        }
+
+        .feed-dot {
+          color: #c5ced8;
+        }
+
+        .feed-row {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          margin-bottom: 10px;
+        }
+
+        .feed-main {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .feed-title {
+          font-size: 26px;
+          line-height: 1.28;
+          font-weight: 700;
+          color: #1f2937;
+          margin-bottom: 10px;
+          word-break: break-word;
+        }
+
+        .status-chip {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px 13px;
+          border-radius: 999px;
+          background: #e8f0fe;
+          color: #1d4ed8;
+          font-size: 12px;
+          font-weight: 700;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .feed-desc {
+          font-size: 16px;
+          line-height: 1.75;
+          color: #5f6c7b;
+          margin-bottom: 18px;
+          word-break: break-word;
+        }
+
+        .feed-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .feed-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px 12px;
+        }
+
+        .meta-pill {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: #f8fafc;
+          border: 1px solid #e5e7eb;
+          color: #475467;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .card-actions {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-left: auto;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .comment-count {
+          font-size: 14px;
+          font-weight: 700;
+          color: #667085;
+          white-space: nowrap;
+        }
+
+        .action-form {
+          margin: 0;
+        }
+
+        .close-btn {
+          border: none;
+          background: #fee8e8;
+          color: #f15151;
+          border-radius: 999px;
+          padding: 9px 14px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.18s ease, opacity 0.18s ease;
+        }
+
+        .close-btn:hover {
+          transform: translateY(-1px);
+          opacity: 0.95;
+        }
+
+        .delete-icon-btn {
+          border: none;
+          background: transparent;
+          color: #94a3b8;
+          font-size: 16px;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 8px;
+          transition: all 0.18s ease;
+        }
+
+        .delete-icon-btn:hover {
+          background: #fee2e2;
+          color: #b91c1c;
+          transform: scale(1.08);
+        }
+
+        .delete-icon-btn:active {
+          transform: scale(0.96);
+        }
+
+        .waiting-text {
+          font-size: 13px;
+          font-weight: 700;
+          color: #64748b;
+          white-space: nowrap;
+        }
+
+        .empty-state {
+          background: #ffffff;
+          border: 1px solid #e7ebf0;
+          border-radius: 22px;
+          padding: 30px 24px;
+          color: #667085;
+          font-size: 16px;
+          line-height: 1.8;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
+        }
+
+        .side-panel {
+          position: sticky;
+          top: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .premium-actions {
+          background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+          border: 1px solid #e6eef8;
+          border-radius: 22px;
+          padding: 22px 20px;
+          box-shadow: 0 18px 30px rgba(15, 23, 42, 0.04);
+        }
+
+        .premium-actions h3 {
+          font-size: 22px;
+          color: #111827;
+          margin-bottom: 8px;
+        }
+
+        .premium-actions p {
+          font-size: 14px;
+          color: #6b7280;
+          line-height: 1.7;
+          margin-bottom: 18px;
+        }
+
+        .action-links {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .action-link {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          text-decoration: none;
+          color: #111827;
+          padding: 14px 16px;
+          border-radius: 16px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .action-link:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+          border-color: #cbd5e1;
+        }
+
+        .action-link-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .action-link-sub {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 3px;
+        }
+
+        .action-arrow {
+          font-size: 18px;
+          color: #94a3b8;
+          flex-shrink: 0;
+        }
+
+        .side-card {
+          background: #ffffff;
+          border: 1px solid #edeff1;
+          border-radius: 18px;
+          padding: 22px 20px;
+        }
+
+        .side-card h3 {
+          font-size: 17px;
+          color: #111827;
+          margin-bottom: 12px;
+        }
+
+        .side-card p {
+          font-size: 14px;
+          color: #6b7280;
+          line-height: 1.8;
+        }
+
+        .loading-text, .error-text {
+          font-size: 16px;
+          padding: 18px 6px;
+        }
+
+        .error-text {
+          color: #b91c1c;
+        }
+
+        @media (max-width: 1100px) {
+          .layout {
+            grid-template-columns: 1fr;
+          }
+
+          .side-panel {
+            position: static;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .page-shell {
+            padding: 18px 14px 40px;
+          }
+
+          .page-title {
+            font-size: 38px;
+          }
+
+          .page-subtitle {
+            font-size: 16px;
+          }
+
+          .feed-card {
+            padding: 18px 16px;
+          }
+
+          .feed-row {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .feed-title {
+            font-size: 23px;
+          }
+
+          .feed-desc {
+            font-size: 15px;
+          }
+
+          .feed-bottom {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .card-actions {
+            margin-left: 0;
+            justify-content: flex-start;
+          }
+        }
+      `}</style>
+
+      <div className="page-shell">
+        <div className="layout">
+          <main className="main-column">
+            <section className="page-header">
+              <div className="page-eyebrow">Your Activity</div>
+              <h1 className="page-title">{pageTitle}</h1>
+              <p className="page-subtitle">{pageSubtitle}</p>
+            </section>
+
+            {loading && <div className="loading-text">Loading your reports...</div>}
+            {error && <div className="error-text">{error}</div>}
+
+            {!loading && !error && tickets.length > 0 && (
+              <section className="feed-shell">
+                {tickets.map((ticket) => (
+                  <div className="feed-card" key={ticket.id}>
+                    <Link className="feed-link" to={`/issues/${ticket.id}`}>
+                      <div className="feed-meta-top">
+                        <span>Posted by</span>
+                        <span className="feed-meta-author">{ticket.reporterName}</span>
+                        <span className="feed-dot">•</span>
+                        <span>{formatDateTime(ticket.createdAt)}</span>
+                      </div>
+
+                      <div className="feed-row">
+                        <div className="feed-main">
+                          <div className="feed-title">{ticket.title}</div>
+                        </div>
+                        <span className="status-chip">{ticket.status}</span>
+                      </div>
+
+                      <div className="feed-desc">
+                        {shortenText(ticket.description, 220)}
+                      </div>
+                    </Link>
+
+                    <div className="feed-bottom">
+                      <div className="feed-tags">
+                        <span className="meta-pill">{ticket.category}</span>
+                        <span className="meta-pill">{ticket.priority}</span>
+                        <span className="meta-pill">{ticket.building}</span>
+                        <span className="meta-pill">{ticket.locationType}</span>
+                      </div>
+
+                      <div className="card-actions">
+                        <div className="comment-count">
+                          {ticket.comments?.length || 0} comments
+                        </div>
+
+                        {(ticket.status === "OPEN" || ticket.status === "RESOLVED") && (
+                          <button
+                            type="button"
+                            className="close-btn"
+                            onClick={() => handleCloseIssue(ticket.id)}
+                          >
+                            Close Ticket
+                          </button>
+                        )}
+
+                        {ticket.status === "IN PROGRESS" && (
+                          <div className="waiting-text">Awaiting support update</div>
+                        )}
+
+                        {ticket.status === "CLOSED" && (
+                          <button
+                            type="button"
+                            className="delete-icon-btn"
+                            title="Delete ticket"
+                            onClick={() => handleDeleteIssue(ticket.id)}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {!loading && !error && tickets.length === 0 && (
+              <section className="empty-state">{emptyMessage}</section>
+            )}
+          </main>
+
+          <aside className="side-panel">
+            <section className="premium-actions">
+              <h3>Quick Actions</h3>
+              <p>Move through your support space quickly with these shortcuts.</p>
+
+              <div className="action-links">
+                <Link to="/" className="action-link">
+                  <div>
+                    <div className="action-link-title">Return to Help Centre</div>
+                    <div className="action-link-sub">Go back to the support home</div>
+                  </div>
+                  <div className="action-arrow">→</div>
+                </Link>
+
+                <Link to="/report" className="action-link">
+                  <div>
+                    <div className="action-link-title">Create New Report</div>
+                    <div className="action-link-sub">Submit another issue ticket</div>
+                  </div>
+                  <div className="action-arrow">→</div>
+                </Link>
+
+                <Link to="/featured" className="action-link">
+                  <div>
+                    <div className="action-link-title">Featured Conversations</div>
+                    <div className="action-link-sub">Browse public issue discussions</div>
+                  </div>
+                  <div className="action-arrow">→</div>
+                </Link>
+              </div>
+            </section>
+
+            <section className="side-card">
+              <h3>About this page</h3>
+              <p>
+                This feed shows tickets created from your account, with the newest
+                submissions shown first.
+              </p>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </>
+  );
+}
