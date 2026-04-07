@@ -53,7 +53,20 @@ public class AdminController {
     @PostMapping("/issues/{issueId}/comments")
     public IssueResponse addAdminComment(@PathVariable Long issueId,
                                          @RequestBody CommentRequest request) {
-        return adminService.addAdminComment(issueId, request.getText());
+        return adminService.addAdminComment(issueId, request.getText(), request.getParentCommentId());
+    }
+
+    @PatchMapping("/issues/{issueId}/comments/{commentId}")
+    public IssueResponse updateAdminComment(@PathVariable Long issueId,
+                                            @PathVariable Long commentId,
+                                            @RequestBody CommentRequest request) {
+        return adminService.updateAdminComment(issueId, commentId, request.getText());
+    }
+
+    @DeleteMapping("/issues/{issueId}/comments/{commentId}")
+    public void deleteAdminComment(@PathVariable Long issueId,
+                                   @PathVariable Long commentId) {
+        adminService.deleteAdminComment(issueId, commentId);
     }
 
     @DeleteMapping("/issues/{issueId}")

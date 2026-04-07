@@ -82,10 +82,17 @@ export default function ReportIssuePage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    let processedValue = value;
+
+    // Special handling for contactNumber: only digits, max 10 characters
+    if (name === "contactNumber") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: value,
-      ...(name === "locationType" && !roomRequiredLocations.includes(value)
+      [name]: processedValue,
+      ...(name === "locationType" && !roomRequiredLocations.includes(processedValue)
         ? { roomNumber: "" }
         : {}),
     }));

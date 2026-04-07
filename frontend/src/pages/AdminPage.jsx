@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   addAdminComment,
   assignIssueTechnician,
+  deleteAdminComment,
   deleteResolvedIssue,
   getAdminIssues,
   getAdminSummary,
   getTechnicians,
+  updateAdminComment,
   updateAdminIssueStatus,
 } from "../api/adminApi";
 
@@ -18,6 +20,12 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [adminNote, setAdminNote] = useState("");
+  const [replyToComment, setReplyToComment] = useState(null);
+  const [previewImage, setPreviewImage] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [pendingScrollCommentId, setPendingScrollCommentId] = useState(null);
+  const discussionNodeRefs = useRef({});
 
   useEffect(() => {
     loadAdminData();
@@ -32,7 +40,10 @@ export default function AdminPage() {
         getAdminSummary(),
       ]);
 
-      const nonClosed = (issuesRes.data || []).filter((issue) => issue.status !== "CLOSED");
+      const nonClosed = (issuesRes.data || []).filter(
+        (issue) => issue.status !== "CLOSED"
+      );
+
       setIssues(nonClosed);
       setTechnicians(techRes.data || []);
       setSummary(summaryRes.data || {});
@@ -101,6 +112,16 @@ export default function AdminPage() {
     }
   }, [filteredIssues, selectedIssueId]);
 
+  useEffect(() => {
+    if (pendingScrollCommentId && discussionNodeRefs.current[pendingScrollCommentId]) {
+      discussionNodeRefs.current[pendingScrollCommentId].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setPendingScrollCommentId(null);
+    }
+  }, [pendingScrollCommentId]);
+
   const selectedIssue = useMemo(
     () => issues.find((issue) => issue.id === selectedIssueId) || null,
     [issues, selectedIssueId]
@@ -109,20 +130,54 @@ export default function AdminPage() {
   const issueImages = selectedIssue?.imageUrls || [];
 
   const latestTechnicianAlert = (issue) => {
-    const updates = (issue.comments || []).filter((comment) =>
-      technicianEmails.has(comment.authorEmail)
-    );
-    return updates.length ? updates[updates.length - 1] : null;
+    const updates = (issue.comments || [])
+      .filter((comment) => technicianEmails.has(comment.authorEmail))
+      .sort((a, b) => {
+        const aTime = a.createdAt
+          ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime()
+          : 0;
+        const bTime = b.createdAt
+          ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime()
+          : 0;
+        return bTime - aTime;
+      });
+
+    return updates.length ? updates[0] : null;
   };
 
   const discussionComments = useMemo(() => {
     if (!selectedIssue?.comments) return [];
     return [...selectedIssue.comments].sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime() : 0;
-      return aTime - bTime;
+      const aTime = a.createdAt
+        ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      const bTime = b.createdAt
+        ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      return bTime - aTime;
     });
   }, [selectedIssue]);
+
+  const getParentComment = (comment) => {
+    if (!comment?.parentCommentId || !selectedIssue?.comments) return null;
+    return selectedIssue.comments.find((c) => c.id === comment.parentCommentId) || null;
+  };
+
+  const technicianAlerts = useMemo(() => {
+    if (!selectedIssue?.comments) return [];
+
+    return [...selectedIssue.comments]
+      .filter((comment) => technicianEmails.has(comment.authorEmail))
+      .sort((a, b) => {
+        const aTime = a.createdAt
+          ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime()
+          : 0;
+        const bTime = b.createdAt
+          ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime()
+          : 0;
+        return bTime - aTime;
+      });
+  }, [selectedIssue, technicianEmails]);
 
   const handleStatusChange = async (issueId, status) => {
     try {
@@ -132,7 +187,11 @@ export default function AdminPage() {
       setSelectedIssueId(null);
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.text || err?.response?.data?.message || "Failed to update issue status.");
+      alert(
+        err?.response?.data?.text ||
+          err?.response?.data?.message ||
+          "Failed to update issue status."
+      );
     }
   };
 
@@ -151,20 +210,101 @@ export default function AdminPage() {
     const trimmed = adminNote.trim();
     if (!trimmed || !selectedIssue) return;
 
+    const parentCommentId = replyToComment ? replyToComment.id : null;
+
     try {
-      await addAdminComment(selectedIssue.id, trimmed);
+      const response = await addAdminComment(
+        selectedIssue.id,
+        trimmed,
+        parentCommentId
+      );
+
+      const updatedIssue = response.data;
+
+      setIssues((prev) =>
+        prev.map((issue) => (issue.id === updatedIssue.id ? updatedIssue : issue))
+      );
+
+      setSelectedIssueId(updatedIssue.id);
       setAdminNote("");
-      await loadAdminData();
-      setSelectedIssueId(selectedIssue.id);
+      setReplyToComment(null);
+
+      const newestMatchingComment = [...(updatedIssue.comments || [])]
+        .filter(
+          (comment) =>
+            comment.authorEmail === "admin@helpdesk.edu" &&
+            (comment.parentCommentId || null) === parentCommentId
+        )
+        .sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+
+      if (newestMatchingComment) {
+        setPendingScrollCommentId(newestMatchingComment.id);
+      }
     } catch (err) {
       console.error(err);
       alert("Failed to send admin note.");
     }
   };
 
+  const handleReplyToComment = (comment) => {
+    setReplyToComment(comment);
+    setAdminNote("");
+
+    setTimeout(() => {
+      const textarea = document.querySelector(".admin-note-box textarea");
+      if (textarea) {
+        textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+        textarea.focus();
+      }
+    }, 120);
+  };
+
+  const handleStartEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.text || "");
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  };
+
+  const handleSaveEditComment = async (commentId) => {
+    const trimmed = editingCommentText.trim();
+    if (!trimmed || !selectedIssue) return;
+
+    try {
+      await updateAdminComment(selectedIssue.id, commentId, trimmed);
+      setEditingCommentId(null);
+      setEditingCommentText("");
+      await loadAdminData();
+      setSelectedIssueId(selectedIssue.id);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update admin comment.");
+    }
+  };
+
+  const handleDeleteAdminComment = async (commentId) => {
+    if (!selectedIssue) return;
+    const confirmed = window.confirm("Delete this admin comment?");
+    if (!confirmed) return;
+
+    try {
+      await deleteAdminComment(selectedIssue.id, commentId);
+      await loadAdminData();
+      setSelectedIssueId(selectedIssue.id);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete admin comment.");
+    }
+  };
+
   const handleDeleteResolved = async () => {
     if (!selectedIssue) return;
-    const confirmed = window.confirm("Delete this resolved issue from admin workflow?");
+    const confirmed = window.confirm(
+      "Delete this resolved issue from admin workflow?"
+    );
     if (!confirmed) return;
 
     try {
@@ -172,8 +312,162 @@ export default function AdminPage() {
       await loadAdminData();
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.message || "Failed to delete resolved issue.");
+      alert(
+        err?.response?.data?.message || "Failed to delete resolved issue."
+      );
     }
+  };
+
+  const buildDiscussionTree = (comments = []) => {
+    const sorted = [...comments].sort((a, b) => {
+      const aTime = a.createdAt
+        ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      const bTime = b.createdAt
+        ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      return bTime - aTime;
+    });
+
+    const map = new Map();
+    sorted.forEach((comment) => {
+      map.set(comment.id, { ...comment, replies: [] });
+    });
+
+    const roots = [];
+
+    sorted.forEach((comment) => {
+      if (comment.parentCommentId && map.has(comment.parentCommentId)) {
+        map.get(comment.parentCommentId).replies.push(map.get(comment.id));
+      } else {
+        roots.push(map.get(comment.id));
+      }
+    });
+
+    return roots;
+  };
+
+  const renderDiscussionNode = (comment, level = 0) => {
+    return (
+      <div
+        key={comment.id}
+        ref={(el) => {
+          if (el) discussionNodeRefs.current[comment.id] = el;
+        }}
+        style={{
+          marginLeft: level > 0 ? `${Math.min(level * 28, 84)}px` : "0px",
+          borderLeft: level > 0 ? "3px solid #e5e7eb" : "none",
+          paddingLeft: level > 0 ? "14px" : "0px",
+          marginTop: level > 0 ? "14px" : "0px",
+        }}
+      >
+        <div className="conversation-card">
+          <div className="conversation-top">
+            <span className="conversation-author">{comment.authorName}</span> •{" "}
+            {formatDateTime(comment.createdAt)}
+          </div>
+          <div className="conversation-text">{comment.text}</div>
+
+          <div style={{ marginTop: "12px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => handleReplyToComment(comment)}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#6b7280",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer",
+                padding: "4px 6px",
+              }}
+              onMouseEnter={(e) => (e.target.style.color = "#2563eb")}
+              onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
+            >
+              Reply
+            </button>
+
+            {comment.authorEmail === "admin@helpdesk.edu" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleStartEditComment(comment)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    color: "#6b7280",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    padding: "4px 6px",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = "#2563eb")}
+                  onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAdminComment(comment.id)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    color: "#6b7280",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    padding: "4px 6px",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = "#ef4444")}
+                  onMouseLeave={(e) => (e.target.style.color = "#6b7280")}
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
+
+          {editingCommentId === comment.id && (
+            <div style={{ marginTop: "10px" }}>
+              <textarea
+                className="admin-note-box"
+                value={editingCommentText}
+                onChange={(e) => setEditingCommentText(e.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "80px",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #d7deea",
+                  fontSize: "14px",
+                  marginBottom: "8px"
+                }}
+              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="admin-note-btn"
+                  onClick={() => handleSaveEditComment(comment.id)}
+                >
+                  Save
+                </button>
+                <button
+                  className="danger-btn"
+                  onClick={handleCancelEditComment}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {comment.replies && comment.replies.length > 0 && (
+            <div>
+              {comment.replies.map((reply) => renderDiscussionNode(reply, level + 1))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const sectionTitle =
@@ -461,11 +755,51 @@ export default function AdminPage() {
           border-radius: 18px;
           border: 1px solid #e5e7eb;
           background: #eef2f7;
+          cursor: zoom-in;
+          transition: transform 0.2s ease;
+        }
+
+        .detail-gallery img:hover {
+          transform: scale(1.02);
+        }
+
+        .image-modal {
+          display: flex;
+          position: fixed;
+          z-index: 9999;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.92);
+          align-items: center;
+          justify-content: center;
+          padding: 30px;
+        }
+
+        .image-modal-content {
+          max-width: 92vw;
+          max-height: 88vh;
+          border-radius: 18px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+          object-fit: contain;
+          background: #fff;
+        }
+
+        .image-modal-close {
+          position: absolute;
+          top: 18px;
+          right: 26px;
+          font-size: 42px;
+          line-height: 1;
+          color: #ffffff;
+          cursor: pointer;
+          font-weight: 400;
+          user-select: none;
+          border: none;
+          background: transparent;
         }
 
         .section {
           margin-top: 26px;
-        }
+        
 
         .section-title {
           font-size: 24px;
@@ -496,13 +830,6 @@ export default function AdminPage() {
           background: #ffffff;
           color: #334155;
           cursor: pointer;
-        }
-
-        .status-action-btn.active {
-          background: #2563eb;
-          border-color: #2563eb;
-          color: #ffffff;
-          box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
         }
 
         .status-action-btn:disabled {
@@ -771,6 +1098,7 @@ export default function AdminPage() {
               ) : (
                 filteredIssues.map((issue) => {
                   const alert = latestTechnicianAlert(issue);
+
                   return (
                     <div
                       key={issue.id}
@@ -780,15 +1108,20 @@ export default function AdminPage() {
                       <div className="issue-card-top">
                         <div className="issue-thumb">
                           {issue.imageUrls && issue.imageUrls.length > 0 ? (
-                            <img src={`http://localhost:8080${issue.imageUrls[0]}`} alt="Issue" />
+                            <img
+                              src={`http://localhost:8080${issue.imageUrls[0]}`}
+                              alt="Issue"
+                            />
                           ) : null}
                         </div>
 
                         <div>
                           <div className="issue-title">{issue.title}</div>
                           <div className="issue-meta">
-                            Reported by <strong>{issue.reporterName}</strong><br />
-                            {formatDateTime(issue.createdAt)}<br />
+                            Reported by <strong>{issue.reporterName}</strong>
+                            <br />
+                            {formatDateTime(issue.createdAt)}
+                            <br />
                             {issue.assignedTechnicianName
                               ? `Assigned to ${issue.assignedTechnicianName}`
                               : "Not assigned yet"}
@@ -823,7 +1156,8 @@ export default function AdminPage() {
                   <div>
                     <div className="detail-title">{selectedIssue.title}</div>
                     <div className="detail-meta">
-                      Reported by <strong>{selectedIssue.reporterName}</strong> • {formatDateTime(selectedIssue.createdAt)}
+                      Reported by <strong>{selectedIssue.reporterName}</strong> •{" "}
+                      {formatDateTime(selectedIssue.createdAt)}
                       <br />
                       {selectedIssue.assignedTechnicianName
                         ? `Assigned to ${selectedIssue.assignedTechnicianName} (${selectedIssue.assignedTeam})`
@@ -837,7 +1171,12 @@ export default function AdminPage() {
                 {issueImages.length > 0 && (
                   <div className="detail-gallery">
                     {issueImages.map((img, index) => (
-                      <img key={`${img}-${index}`} src={`http://localhost:8080${img}`} alt="Issue" />
+                      <img
+                        key={`${img}-${index}`}
+                        src={`http://localhost:8080${img}`}
+                        alt="Issue"
+                        onClick={() => setPreviewImage(`http://localhost:8080${img}`)}
+                      />
                     ))}
                   </div>
                 )}
@@ -850,32 +1189,43 @@ export default function AdminPage() {
                 <div className="section">
                   <div className="section-title">Status Control</div>
                   <div className="status-actions">
-                    <button
-                      className={`status-action-btn ${selectedIssue.status === "IN PROGRESS" ? "active" : ""}`}
-                      disabled={!selectedIssue.assignedTechnicianEmail}
-                      onClick={() => handleStatusChange(selectedIssue.id, "IN PROGRESS")}
-                    >
-                      Set IN PROGRESS
-                    </button>
-                    <button
-                      className={`status-action-btn ${selectedIssue.status === "RESOLVED" ? "active" : ""}`}
-                      onClick={() => handleStatusChange(selectedIssue.id, "RESOLVED")}
-                    >
-                      Set RESOLVED
-                    </button>
+                    {selectedIssue.status === "OPEN" && (
+                      <button
+                        className="status-action-btn"
+                        disabled={!selectedIssue.assignedTechnicianEmail}
+                        onClick={() =>
+                          handleStatusChange(selectedIssue.id, "IN PROGRESS")
+                        }
+                      >
+                        Move to IN PROGRESS
+                      </button>
+                    )}
+
+                    {selectedIssue.status === "IN PROGRESS" && (
+                      <button
+                        className="status-action-btn"
+                        onClick={() =>
+                          handleStatusChange(selectedIssue.id, "RESOLVED")
+                        }
+                      >
+                        Move to RESOLVED
+                      </button>
+                    )}
 
                     {selectedIssue.status === "RESOLVED" && (
                       <button className="danger-btn" onClick={handleDeleteResolved}>
-                        Delete Resolved Issue
+                        Remove from Admin Queue
                       </button>
                     )}
                   </div>
 
-                  {!selectedIssue.assignedTechnicianEmail && (
-                    <div className="empty-note" style={{ marginTop: "10px" }}>
-                      Assign a technician first before moving this issue to IN PROGRESS.
-                    </div>
-                  )}
+                  {selectedIssue.status === "OPEN" &&
+                    !selectedIssue.assignedTechnicianEmail && (
+                      <div className="empty-note" style={{ marginTop: "10px" }}>
+                        Assign a technician first before moving this issue to IN
+                        PROGRESS.
+                      </div>
+                    )}
                 </div>
 
                 <div className="section">
@@ -899,11 +1249,15 @@ export default function AdminPage() {
                     </div>
                     <div className="info-card">
                       <div className="info-label">Exact Location</div>
-                      <div className="info-value">{selectedIssue.roomNumber || "—"}</div>
+                      <div className="info-value">
+                        {selectedIssue.roomNumber || "—"}
+                      </div>
                     </div>
                     <div className="info-card">
                       <div className="info-label">Observed Date</div>
-                      <div className="info-value">{selectedIssue.incidentDate || "—"}</div>
+                      <div className="info-value">
+                        {selectedIssue.incidentDate || "—"}
+                      </div>
                     </div>
                     <div className="info-card">
                       <div className="info-label">Reporter Email</div>
@@ -911,45 +1265,102 @@ export default function AdminPage() {
                     </div>
                     <div className="info-card">
                       <div className="info-label">Assigned At</div>
-                      <div className="info-value">{formatDateTime(selectedIssue.assignedAt)}</div>
+                      <div className="info-value">
+                        {formatDateTime(selectedIssue.assignedAt)}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="section">
-                  <div className="section-title">Assign Technician</div>
-                  <div className="tech-grid">
-                    {technicians.map((tech) => (
-                      <div className="tech-card" key={tech.id}>
-                        <div className="tech-name">{tech.name}</div>
-                        <div className="tech-team">{tech.team}</div>
-                        <div className="tech-spec">{tech.specialization}</div>
-                        <div className="tech-email">{tech.email}</div>
-                        <div className="tech-phone">{tech.phone}</div>
-                        <div className="tech-phone">Status: {tech.status}</div>
+                {selectedIssue.status === "OPEN" && (
+                  <div className="section">
+                    <div className="section-title">Assign Technician</div>
+                    <div className="tech-grid">
+                      {technicians.map((tech) => {
+                        const assigned =
+                          selectedIssue.assignedTechnicianEmail === tech.email;
 
-                        <button
-                          className="assign-btn"
-                          onClick={() => handleAssignTechnician(selectedIssue.id, tech.id)}
-                        >
-                          Assign Technician
-                        </button>
-                      </div>
-                    ))}
+                        return (
+                          <div className="tech-card" key={tech.id}>
+                            <div className="tech-name">{tech.name}</div>
+                            <div className="tech-team">{tech.team}</div>
+                            <div className="tech-spec">{tech.specialization}</div>
+                            <div className="tech-email">{tech.email}</div>
+                            <div className="tech-phone">{tech.phone}</div>
+                            <div className="tech-phone">Status: {tech.status}</div>
+
+                            <button
+                              className="assign-btn"
+                              onClick={() =>
+                                handleAssignTechnician(selectedIssue.id, tech.id)
+                              }
+                            >
+                              {assigned ? "Assigned ✓" : "Assign Technician"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {selectedIssue.status === "IN PROGRESS" && (
+                  <div className="section">
+                    <div className="section-title">Technician Alerts</div>
+                    {technicianAlerts.length === 0 ? (
+                      <div className="empty-note">No technician alerts yet.</div>
+                    ) : (
+                      <div className="conversation-list">
+                        {technicianAlerts.map((comment) => (
+                          <div
+                            className="conversation-card"
+                            key={comment.id}
+                            onClick={() => setPendingScrollCommentId(comment.id)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <div className="conversation-top">
+                              <span className="conversation-author">
+                                {comment.authorName}
+                              </span>{" "}
+                              • {formatDateTime(comment.createdAt)}
+                            </div>
+                            <div className="conversation-text">{comment.text}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="section">
                   <div className="section-title">Admin Communication</div>
+
+                  {replyToComment && (
+                    <div className="conversation-card" style={{ marginBottom: "12px" }}>
+                      <div className="conversation-top">
+                        Replying to <span className="conversation-author">{replyToComment.authorName}</span>
+                      </div>
+                      <div className="conversation-text">{replyToComment.text}</div>
+                      <div style={{ marginTop: "10px" }}>
+                        <button
+                          className="danger-btn"
+                          onClick={() => setReplyToComment(null)}
+                        >
+                          Cancel Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="admin-note-box">
                     <textarea
-                      placeholder="Write an admin message or instruction. This will appear in the issue discussion and users can see it too."
+                      placeholder="Write an admin message or reply. This will appear in the issue discussion and users can see it too."
                       value={adminNote}
                       onChange={(e) => setAdminNote(e.target.value)}
                     />
                     <div className="admin-note-actions">
                       <button className="admin-note-btn" onClick={handleAdminComment}>
-                        Send Admin Message
+                        {replyToComment ? "Send Reply" : "Send Admin Message"}
                       </button>
                     </div>
                   </div>
@@ -961,14 +1372,9 @@ export default function AdminPage() {
                     <div className="empty-note">No discussion yet.</div>
                   ) : (
                     <div className="conversation-list">
-                      {discussionComments.map((comment) => (
-                        <div className="conversation-card" key={comment.id}>
-                          <div className="conversation-top">
-                            <span className="conversation-author">{comment.authorName}</span> • {formatDateTime(comment.createdAt)}
-                          </div>
-                          <div className="conversation-text">{comment.text}</div>
-                        </div>
-                      ))}
+                      {buildDiscussionTree(discussionComments).map((comment) =>
+                        renderDiscussionNode(comment)
+                      )}
                     </div>
                   )}
                 </div>
@@ -979,6 +1385,20 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {previewImage && (
+        <div className="image-modal" onClick={() => setPreviewImage("")}> 
+          <button className="image-modal-close" onClick={() => setPreviewImage("")}> 
+            &times;
+          </button>
+          <img
+            className="image-modal-content"
+            src={previewImage}
+            alt="Expanded issue"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </>
   );
 }

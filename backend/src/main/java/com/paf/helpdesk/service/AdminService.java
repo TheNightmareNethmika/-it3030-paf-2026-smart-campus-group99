@@ -16,7 +16,11 @@ public interface AdminService {
 
     IssueResponse assignTechnician(Long issueId, Long technicianId);
 
-    IssueResponse addAdminComment(Long issueId, String text);
+    IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId);
+
+    IssueResponse updateAdminComment(Long issueId, Long commentId, String text);
+
+    void deleteAdminComment(Long issueId, Long commentId);
 
     void deleteResolvedIssue(Long issueId);
 

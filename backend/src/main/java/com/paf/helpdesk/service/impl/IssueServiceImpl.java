@@ -109,6 +109,7 @@ public class IssueServiceImpl implements IssueService {
         comment.setText(hasText ? request.getText().trim() : "");
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
+        comment.setParentCommentId(request.getParentCommentId());
 
         if (images != null && !images.isEmpty()) {
             comment.setImageUrls(saveCommentImages(images));
@@ -125,7 +126,7 @@ public class IssueServiceImpl implements IssueService {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + id));
 
-        if (!issue.getReporterEmail().equals(email)) {
+        if (!issue.getReporterEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedActionException("You are not allowed to close this issue");
         }
 
@@ -134,8 +135,9 @@ public class IssueServiceImpl implements IssueService {
         }
 
         issue.setStatus("CLOSED");
-        Issue updatedIssue = issueRepository.save(issue);
+        issue.setVisibleToAdmin(false);
 
+        Issue updatedIssue = issueRepository.save(issue);
         return mapToIssueResponse(updatedIssue);
     }
 
@@ -144,8 +146,12 @@ public class IssueServiceImpl implements IssueService {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + id));
 
-        if (!issue.getReporterEmail().equals(email)) {
+        if (!issue.getReporterEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedActionException("You are not allowed to delete this issue");
+        }
+
+        if (!"CLOSED".equalsIgnoreCase(issue.getStatus())) {
+            throw new IllegalArgumentException("Only closed issues can be deleted.");
         }
 
         issueRepository.delete(issue);
@@ -324,6 +330,7 @@ public class IssueServiceImpl implements IssueService {
         response.setAuthorEmail(comment.getAuthorEmail());
         response.setText(comment.getText());
         response.setCreatedAt(comment.getCreatedAt());
+        response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
         return response;
     }

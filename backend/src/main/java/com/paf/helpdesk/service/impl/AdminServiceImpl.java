@@ -61,9 +61,24 @@ public class AdminServiceImpl implements AdminService {
             throw new IllegalArgumentException("Admin can set only IN PROGRESS or RESOLVED.");
         }
 
-        if ("IN PROGRESS".equals(normalized)
-                && (issue.getAssignedTechnicianEmail() == null || issue.getAssignedTechnicianEmail().isBlank())) {
-            throw new IllegalArgumentException("Assign a technician before setting IN PROGRESS.");
+        if ("OPEN".equalsIgnoreCase(issue.getStatus())) {
+            if (!"IN PROGRESS".equals(normalized)) {
+                throw new IllegalArgumentException("Open issues can only be moved to IN PROGRESS.");
+            }
+
+            if (issue.getAssignedTechnicianEmail() == null || issue.getAssignedTechnicianEmail().isBlank()) {
+                throw new IllegalArgumentException("Assign a technician before setting IN PROGRESS.");
+            }
+        }
+
+        if ("IN PROGRESS".equalsIgnoreCase(issue.getStatus())) {
+            if (!"RESOLVED".equals(normalized)) {
+                throw new IllegalArgumentException("In-progress issues can only be moved to RESOLVED.");
+            }
+        }
+
+        if ("RESOLVED".equalsIgnoreCase(issue.getStatus())) {
+            throw new IllegalArgumentException("Resolved issues cannot be moved further by admin.");
         }
 
         issue.setStatus(normalized);
@@ -91,7 +106,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public IssueResponse addAdminComment(Long issueId, String text) {
+    public IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
@@ -105,6 +120,7 @@ public class AdminServiceImpl implements AdminService {
         comment.setText(text.trim());
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
+        comment.setParentCommentId(parentCommentId);
 
         commentRepository.save(comment);
 
@@ -112,6 +128,54 @@ public class AdminServiceImpl implements AdminService {
                 issueRepository.findById(issueId)
                         .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId))
         );
+    }
+
+    @Override
+    public IssueResponse updateAdminComment(Long issueId, Long commentId, String text) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+
+        if (!comment.getIssue().getId().equals(issue.getId())) {
+            throw new ResourceNotFoundException("Comment does not belong to this issue");
+        }
+
+        if (!"admin@helpdesk.edu".equalsIgnoreCase(comment.getAuthorEmail())) {
+            throw new IllegalArgumentException("Admin can edit only admin comments.");
+        }
+
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment cannot be empty.");
+        }
+
+        comment.setText(text.trim());
+        commentRepository.save(comment);
+
+        return mapToIssueResponse(
+                issueRepository.findById(issueId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId))
+        );
+    }
+
+    @Override
+    public void deleteAdminComment(Long issueId, Long commentId) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
+
+        if (!comment.getIssue().getId().equals(issue.getId())) {
+            throw new ResourceNotFoundException("Comment does not belong to this issue");
+        }
+
+        if (!"admin@helpdesk.edu".equalsIgnoreCase(comment.getAuthorEmail())) {
+            throw new IllegalArgumentException("Admin can delete only admin comments.");
+        }
+
+        commentRepository.delete(comment);
     }
 
     @Override
@@ -186,6 +250,7 @@ public class AdminServiceImpl implements AdminService {
         response.setAuthorEmail(comment.getAuthorEmail());
         response.setText(comment.getText());
         response.setCreatedAt(comment.getCreatedAt());
+        response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
         return response;
     }

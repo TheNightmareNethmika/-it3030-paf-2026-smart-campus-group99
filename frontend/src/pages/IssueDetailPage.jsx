@@ -12,6 +12,9 @@ export default function IssueDetailPage() {
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentError, setCommentError] = useState("");
+  const [replyToComment, setReplyToComment] = useState(null);
+  const [pendingScrollCommentId, setPendingScrollCommentId] = useState(null);
+  const commentNodeRefs = useRef({});
   const [previewImage, setPreviewImage] = useState("");
   const commentFormRef = useRef(null);
   const [commentImages, setCommentImages] = useState([]);
@@ -26,6 +29,16 @@ export default function IssueDetailPage() {
   useEffect(() => {
     fetchIssue();
   }, [id]);
+
+  useEffect(() => {
+    if (pendingScrollCommentId && commentNodeRefs.current[pendingScrollCommentId]) {
+      commentNodeRefs.current[pendingScrollCommentId].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setPendingScrollCommentId(null);
+    }
+  }, [pendingScrollCommentId, ticket]);
 
   const fetchIssue = async () => {
     try {
@@ -79,20 +92,40 @@ export default function IssueDetailPage() {
       return;
     }
 
+    const replyParentId = replyToComment ? replyToComment.id : null;
+
     const formData = new FormData();
     formData.append("text", trimmedText);
+    if (replyParentId) {
+      formData.append("parentCommentId", replyParentId);
+    }
 
     commentImages.forEach((file) => {
       formData.append("images", file);
     });
 
     try {
-      await addComment(id, formData);
+      const response = await addComment(id, formData);
+      const updatedIssue = response.data;
+
+      setTicket(updatedIssue);
       setCommentText("");
       setCommentImages([]);
       setCommentFileError("");
       setShowCommentForm(false);
-      fetchIssue();
+      setReplyToComment(null);
+
+      const newestMatchingComment = [...(updatedIssue.comments || [])]
+        .filter(
+          (comment) =>
+            comment.authorEmail === currentUserEmail &&
+            (comment.parentCommentId || null) === replyParentId
+        )
+        .sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+
+      if (newestMatchingComment) {
+        setPendingScrollCommentId(newestMatchingComment.id);
+      }
     } catch (err) {
       console.error(err);
       if (err.response?.data?.text) {
@@ -278,6 +311,215 @@ const removeCommentImage = (indexToRemove) => {
   if (!ticket) {
     return <div style={{ padding: "30px" }}>Issue not found.</div>;
   }
+
+const buildCommentTree = (comments = []) => {
+    const sorted = [...comments].sort((a, b) => {
+      const aTime = a.createdAt
+        ? new Date(a.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      const bTime = b.createdAt
+        ? new Date(b.createdAt.replace("T", " ").split(".")[0]).getTime()
+        : 0;
+      return bTime - aTime;
+    });
+
+    const map = new Map();
+    sorted.forEach((comment) => {
+      map.set(comment.id, { ...comment, replies: [] });
+    });
+
+    const roots = [];
+
+    sorted.forEach((comment) => {
+      const node = map.get(comment.id);
+
+      if (comment.parentCommentId && map.has(comment.parentCommentId)) {
+        map.get(comment.parentCommentId).replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    return roots;
+  };
+
+  const renderCommentNode = (comment, level = 0) => {
+    const isOwnComment = comment.authorEmail === currentUserEmail;
+
+    return (
+      <div
+        key={comment.id}
+        ref={(el) => {
+          if (el) commentNodeRefs.current[comment.id] = el;
+        }}
+        style={{
+          marginLeft: level > 0 ? `${Math.min(level * 28, 84)}px` : "0px",
+          borderLeft: level > 0 ? "3px solid #e5e7eb" : "none",
+          paddingLeft: level > 0 ? "14px" : "0px",
+          marginTop: level > 0 ? "14px" : "0px",
+        }}
+      >
+        <div className="comment-item">
+          <div className="comment-line"></div>
+
+          <div className="comment-body">
+            <div className="comment-top">
+              <span className="comment-author">{comment.authorName}</span>
+              <span className="dot-separator">•</span>
+              <span className="comment-time">{formatDateTime(comment.createdAt)}</span>
+            </div>
+
+            {editingCommentId === comment.id ? (
+              <>
+                <textarea
+                  className="edit-comment-textarea"
+                  value={editingCommentText}
+                  onChange={(e) => setEditingCommentText(e.target.value)}
+                />
+
+                <div className="edit-comment-image-preview-container">
+                  {editingCommentImages.map((img, index) => (
+                    <div className="edit-comment-image-preview-item" key={`old-${img}-${index}`}>
+                      <img src={`http://localhost:8080${img}`} alt="Existing" />
+                      <button
+                        type="button"
+                        className="edit-comment-remove-image-btn"
+                        onClick={() => removeExistingEditImage(index)}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+
+                  {editingNewImages.map((file, index) => (
+                    <div className="edit-comment-image-preview-item" key={`new-${file.name}-${index}`}>
+                      <img src={URL.createObjectURL(file)} alt="New" />
+                      <button
+                        type="button"
+                        className="edit-comment-remove-image-btn"
+                        onClick={() => removeNewEditImage(index)}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  id={`editCommentImagesInput-${comment.id}`}
+                  onChange={handleEditCommentImageSelection}
+                />
+
+                {editingCommentFileError && (
+                  <div className="field-error">{editingCommentFileError}</div>
+                )}
+
+                <div className="comment-actions">
+                  <button
+                    type="button"
+                    className="edit-comment-upload-btn"
+                    onClick={() =>
+                      document.getElementById(`editCommentImagesInput-${comment.id}`).click()
+                    }
+                  >
+                    Add Image
+                  </button>
+
+                  <button
+                    type="button"
+                    className="save-comment-btn"
+                    onClick={() => handleSaveEditComment(comment.id)}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="cancel-edit-btn"
+                    onClick={handleCancelEditComment}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="comment-text">{comment.text}</div>
+
+                {comment.imageUrls && comment.imageUrls.length > 0 && (
+                  <div className="comment-image-gallery">
+                    {comment.imageUrls.map((img, index) => (
+                      <div className="comment-image-tile" key={`${img}-${index}`}>
+                        <img
+                          src={`http://localhost:8080${img}`}
+                          alt="Comment"
+                          className="comment-image"
+                          onClick={() => setPreviewImage(`http://localhost:8080${img}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="comment-actions">
+                  <button
+                    type="button"
+                    className="edit-comment-btn"
+                    onClick={() => handleReplyToComment(comment)}
+                  >
+                    Reply
+                  </button>
+
+                  {isOwnComment && (
+                    <>
+                      <button
+                        type="button"
+                        className="edit-comment-btn"
+                        onClick={() => handleStartEditComment(comment)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="delete-comment-btn"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+
+            {comment.replies && comment.replies.length > 0 && (
+              <div>
+                {comment.replies.map((reply) => renderCommentNode(reply, level + 1))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+const handleReplyToComment = (comment) => {
+    setReplyToComment(comment);
+    setShowCommentForm(true);
+
+    setTimeout(() => {
+      commentFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      const textarea = document.querySelector('.comment-entry-box textarea');
+      textarea?.focus();
+    }, 120);
+  };
 
   return (
     <>
@@ -479,6 +721,21 @@ const removeCommentImage = (indexToRemove) => {
           margin-bottom: 20px;
           border-radius: 16px;
           overflow: hidden;
+        }
+
+        .detail-gallery {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .detail-gallery .image-tile {
+          height: 180px;
+        }
+
+        .detail-gallery .issue-image {
+          cursor: zoom-in;
         }
 
         .image-gallery.single-image {
@@ -1243,7 +1500,7 @@ const removeCommentImage = (indexToRemove) => {
                 </div>
               </div>
                 {ticket.imageUrls && ticket.imageUrls.length > 0 && (
-                <div className={`image-gallery ${getGalleryClass(ticket.imageUrls)}`}>
+                <div className={`detail-gallery ${getGalleryClass(ticket.imageUrls)}`}>
                   {ticket.imageUrls.map((img, index) => (
                     <div
                       className={`image-tile ${
@@ -1256,7 +1513,7 @@ const removeCommentImage = (indexToRemove) => {
                         alt="Issue"
                         className="issue-image"
                         onClick={() => setPreviewImage(`http://localhost:8080${img}`)}
-                    />
+                      />
                     </div>
                   ))}
                 </div>
@@ -1336,10 +1593,37 @@ const removeCommentImage = (indexToRemove) => {
               <section className="comments-section">
                 <h2 className="section-heading">Comments</h2>
 
-{showCommentForm && (
-  <div className="comment-form-wrap" ref={commentFormRef}>
-    <form onSubmit={handleAddComment}>
-      <div className="comment-entry-box">
+            {showCommentForm && (
+                  <div className="comment-form-wrap" ref={commentFormRef}>
+                    {replyToComment && (
+                      <div
+                        style={{
+                          background: "#eef2ff",
+                          border: "1px solid #c7d2fe",
+                          color: "#3730a3",
+                          borderRadius: "14px",
+                          padding: "12px 14px",
+                          marginBottom: "12px",
+                          fontSize: "13px",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        Replying to <strong>{replyToComment.authorName}</strong>:{" "}
+                        {replyToComment.text}
+                        <div style={{ marginTop: "10px" }}>
+                          <button
+                            type="button"
+                            className="cancel-edit-btn"
+                            onClick={() => setReplyToComment(null)}
+                          >
+                            Cancel Reply
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleAddComment}>
+                      <div className="comment-entry-box">
         <textarea
           name="text"
           placeholder="Join the conversation"
@@ -1402,7 +1686,8 @@ const removeCommentImage = (indexToRemove) => {
                 setCommentError("");
                 setCommentImages([]);
                 setCommentFileError("");
-              }}
+                setReplyToComment(null);
+            }}
             >
               Cancel
             </button>
@@ -1419,135 +1704,9 @@ const removeCommentImage = (indexToRemove) => {
 
                 {ticket.comments && ticket.comments.length > 0 ? (
                   <div className="comments-list">
-                    {ticket.comments.map((comment) => (
-                      <div className="comment-item" key={comment.id}>
-                        <div className="comment-line"></div>
-
-                        <div className="comment-body">
-                          <div className="comment-top">
-                            <span className="comment-author">{comment.authorName}</span>
-                            <span className="dot-separator">•</span>
-                            <span className="comment-time">{formatDateTime(comment.createdAt)}</span>
-                          </div>
-
-                         {editingCommentId === comment.id ? (
-                            <>
-                              <textarea
-                                className="edit-comment-textarea"
-                                value={editingCommentText}
-                                onChange={(e) => setEditingCommentText(e.target.value)}
-                              />
-
-                              <div className="edit-comment-image-preview-container">
-                                {editingCommentImages.map((img, index) => (
-                                  <div className="edit-comment-image-preview-item" key={`old-${img}-${index}`}>
-                                    <img src={`http://localhost:8080${img}`} alt="Existing" />
-                                    <button
-                                      type="button"
-                                      className="edit-comment-remove-image-btn"
-                                      onClick={() => removeExistingEditImage(index)}
-                                    >
-                                      &times;
-                                    </button>
-                                  </div>
-                                ))}
-
-                                {editingNewImages.map((file, index) => (
-                                  <div className="edit-comment-image-preview-item" key={`new-${file.name}-${index}`}>
-                                    <img src={URL.createObjectURL(file)} alt="New" />
-                                    <button
-                                      type="button"
-                                      className="edit-comment-remove-image-btn"
-                                      onClick={() => removeNewEditImage(index)}
-                                    >
-                                      &times;
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-
-                              <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                hidden
-                                id={`editCommentImagesInput-${comment.id}`}
-                                onChange={handleEditCommentImageSelection}
-                              />
-
-                              {editingCommentFileError && (
-                                <div className="field-error">{editingCommentFileError}</div>
-                              )}
-
-                              <div className="comment-actions">
-                                <button
-                                  type="button"
-                                  className="edit-comment-upload-btn"
-                                  onClick={() =>
-                                    document.getElementById(`editCommentImagesInput-${comment.id}`).click()
-                                  }
-                                >
-                                  Add Image
-                                </button>
-
-                                <button
-                                  type="button"
-                                  className="save-comment-btn"
-                                  onClick={() => handleSaveEditComment(comment.id)}
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  className="cancel-edit-btn"
-                                  onClick={handleCancelEditComment}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="comment-text">{comment.text}</div>
-
-                              {comment.imageUrls && comment.imageUrls.length > 0 && (
-                                <div className="comment-image-gallery">
-                                  {comment.imageUrls.map((img, index) => (
-                                    <div className="comment-image-tile" key={`${img}-${index}`}>
-                                      <img
-                                        src={`http://localhost:8080${img}`}
-                                        alt="Comment"
-                                        className="comment-image"
-                                        onClick={() => setPreviewImage(`http://localhost:8080${img}`)}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {comment.authorEmail === currentUserEmail && (
-                            <div className="comment-actions">
-                              <button
-                                 type="button"
-                                 className="edit-comment-btn"
-                                 onClick={() => handleStartEditComment(comment)}
-                                >
-                                 Edit
-                              </button>
-                              <button
-                                 type="button"
-                                 className="delete-comment-btn"
-                                 onClick={() => handleDeleteComment(comment.id)}
-                                >
-                                   Delete
-                               </button>
-                            </div>
-                            )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {buildCommentTree(ticket.comments).map((comment) =>
+                      renderCommentNode(comment)
+                    )}
                   </div>
                 ) : (
                   <div className="empty-comments">
