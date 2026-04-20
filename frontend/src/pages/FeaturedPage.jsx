@@ -9,6 +9,10 @@ export default function FeaturedPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchTerm = searchParams.get("search")?.toLowerCase().trim() || "";
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [buildingFilter, setBuildingFilter] = useState("all");
 
   useEffect(() => {
     fetchIssues();
@@ -51,6 +55,25 @@ export default function FeaturedPage() {
   const abbreviate = (text, max = 220) => {
     if (!text) return "";
     return text.length > max ? text.substring(0, max) + "..." : text;
+  };
+
+  const getFilteredTickets = () => {
+    return filteredTickets.filter(ticket => {
+      const statusMatch = statusFilter === "all" || ticket.status === statusFilter;
+      const priorityMatch = priorityFilter === "all" || ticket.priority === priorityFilter;
+      const categoryMatch = categoryFilter === "all" || ticket.category === categoryFilter;
+      const buildingMatch = buildingFilter === "all" || ticket.building === buildingFilter;
+      return statusMatch && priorityMatch && categoryMatch && buildingMatch;
+    });
+  };
+
+  const getUniqueBuildingValues = () => {
+    const buildings = tickets
+      .map(t => t.building)
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort();
+    return buildings;
   };
 
   const filteredTickets = tickets.filter((ticket) => {
@@ -382,6 +405,93 @@ export default function FeaturedPage() {
           }
         }
 
+        .filter-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          margin-bottom: 24px;
+          padding: 16px 20px;
+          background: #ffffff;
+          border: 1px solid #e7ebf0;
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+        }
+
+        .filter-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #667085;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          white-space: nowrap;
+        }
+
+        .filter-select {
+          padding: 9px 14px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #111827;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          appearance: none;
+          padding-right: 32px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23667085' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+        }
+
+        .filter-select:hover {
+          border-color: #cbd5e1;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .filter-select:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .filter-divider {
+          width: 1px;
+          height: 24px;
+          background: #e5e7eb;
+          margin: 0 4px;
+        }
+
+        .clear-filters-btn {
+          margin-left: auto;
+          padding: 8px 12px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          color: #667085;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .clear-filters-btn:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          color: #475467;
+        }
+
+        @media (max-width: 1100px) {
+          .layout {
+            grid-template-columns: 1fr;
+          }
+
+          .side-panel {
+            position: static;
+          }
+        }
+
         @media (max-width: 768px) {
           .page-shell {
             padding: 18px 14px 40px;
@@ -440,46 +550,120 @@ export default function FeaturedPage() {
             ) : error ? (
               <section className="error-state">{error}</section>
             ) : filteredTickets.length > 0 ? (
-              <section className="feed-shell">
-                {filteredTickets.map((ticket) => (
-                  <div
-                    className="feed-card"
-                    key={ticket.id}
-                    onClick={() => navigate(`/issues/${ticket.id}`)}
+              <>
+                <div className="filter-container">
+                  <span className="filter-label">Filter by:</span>
+                  <select 
+                    className="filter-select" 
+                    value={statusFilter} 
+                    onChange={(e) => setStatusFilter(e.target.value)}
                   >
-                    <div className="feed-meta-top">
-                      <span>Posted by</span>
-                      <span className="feed-meta-author">{ticket.reporterName}</span>
-                      <span className="feed-dot">•</span>
-                      <span>{formatDateTime(ticket.createdAt)}</span>
-                    </div>
+                    <option value="all">All Status</option>
+                    <option value="OPEN">Open</option>
+                    <option value="IN PROGRESS">In Progress</option>
+                    <option value="RESOLVED">Resolved</option>
+                    <option value="CLOSED">Closed</option>
+                  </select>
 
-                    <div className="feed-row">
-                      <div className="feed-main">
-                        <div className="feed-title">{ticket.title}</div>
+                  <select 
+                    className="filter-select" 
+                    value={priorityFilter} 
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                  >
+                    <option value="all">All Priority</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+
+                  <select 
+                    className="filter-select" 
+                    value={categoryFilter} 
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                  >
+                    <option value="all">All Category</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software">Software</option>
+                    <option value="Network">Network</option>
+                    <option value="Facilities">Facilities</option>
+                    <option value="Other">Other</option>
+                  </select>
+
+                  <select 
+                    className="filter-select" 
+                    value={buildingFilter} 
+                    onChange={(e) => setBuildingFilter(e.target.value)}
+                  >
+                    <option value="all">All Buildings</option>
+                    {getUniqueBuildingValues().map((building) => (
+                      <option key={building} value={building}>
+                        {building}
+                      </option>
+                    ))}
+                  </select>
+
+                  {(statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || buildingFilter !== "all") && (
+                    <button 
+                      className="clear-filters-btn"
+                      onClick={() => {
+                        setStatusFilter("all");
+                        setPriorityFilter("all");
+                        setCategoryFilter("all");
+                        setBuildingFilter("all");
+                      }}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+
+                <section className="feed-shell">
+                  {getFilteredTickets().map((ticket) => (
+                    <div
+                      className="feed-card"
+                      key={ticket.id}
+                      onClick={() => navigate(`/issues/${ticket.id}`)}
+                    >
+                      <div className="feed-meta-top">
+                        <span>Posted by</span>
+                        <span className="feed-meta-author">{ticket.reporterName}</span>
+                        <span className="feed-dot">•</span>
+                        <span>{formatDateTime(ticket.createdAt)}</span>
                       </div>
-                      <span className="status-chip">{ticket.status}</span>
-                    </div>
 
-                    <div className="feed-desc">
-                      {abbreviate(ticket.description, 220)}
-                    </div>
-
-                    <div className="feed-bottom">
-                      <div className="feed-tags">
-                        <span className="meta-pill">{ticket.category}</span>
-                        <span className="meta-pill">{ticket.priority}</span>
-                        <span className="meta-pill">{ticket.building}</span>
-                        <span className="meta-pill">{ticket.locationType}</span>
+                      <div className="feed-row">
+                        <div className="feed-main">
+                          <div className="feed-title">{ticket.title}</div>
+                        </div>
+                        <span className="status-chip">{ticket.status}</span>
                       </div>
 
-                      <div className="comment-count">
-                        {ticket.comments?.length || 0} comments
+                      <div className="feed-desc">
+                        {abbreviate(ticket.description, 220)}
+                      </div>
+
+                      <div className="feed-bottom">
+                        <div className="feed-tags">
+                          <span className="meta-pill">{ticket.category}</span>
+                          <span className="meta-pill">{ticket.priority}</span>
+                          <span className="meta-pill">{ticket.building}</span>
+                          <span className="meta-pill">{ticket.locationType}</span>
+                        </div>
+
+                        <div className="comment-count">
+                          {ticket.comments?.length || 0} comments
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </section>
+                  ))}
+
+                  {getFilteredTickets().length === 0 && (
+                    <div className="empty-state">
+                      No conversations match the selected filters.
+                    </div>
+                  )}
+                </section>
+              </>
             ) : (
              <section className="empty-state">
                 {searchTerm
