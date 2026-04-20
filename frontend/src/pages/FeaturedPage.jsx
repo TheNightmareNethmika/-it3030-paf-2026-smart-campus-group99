@@ -67,15 +67,6 @@ export default function FeaturedPage() {
     });
   };
 
-  const getUniqueBuildingValues = () => {
-    const buildings = tickets
-      .map(t => t.building)
-      .filter(Boolean)
-      .filter((v, i, a) => a.indexOf(v) === i)
-      .sort();
-    return buildings;
-  };
-
   const filteredTickets = tickets.filter((ticket) => {
     if (!searchTerm) return true;
 
@@ -425,23 +416,36 @@ export default function FeaturedPage() {
           text-transform: uppercase;
           letter-spacing: 0.05em;
           white-space: nowrap;
+          align-self: center;
         }
 
         .filter-select {
-          padding: 9px 14px;
+          padding: 10px 12px;
           border: 1px solid #e5e7eb;
           border-radius: 8px;
           background: #ffffff;
           color: #111827;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
           appearance: none;
-          padding-right: 32px;
+          padding-right: 28px;
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23667085' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
-          background-position: right 10px center;
+          background-position: right 8px center;
+          height: 40px;
+          flex-shrink: 0;
+        }
+
+        .filter-select.status-select,
+        .filter-select.priority-select {
+          width: 120px;
+        }
+
+        .filter-select.category-select,
+        .filter-select.building-select {
+          width: 160px;
         }
 
         .filter-select:hover {
@@ -463,23 +467,26 @@ export default function FeaturedPage() {
         }
 
         .clear-filters-btn {
-          margin-left: auto;
-          padding: 8px 12px;
-          border: 1px solid #e5e7eb;
-          background: #ffffff;
-          color: #667085;
+          padding: 10px 12px;
+          border: 1px solid #dc2626;
+          background: transparent;
+          color: #dc2626;
           border-radius: 8px;
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
           transition: all 0.2s ease;
           white-space: nowrap;
+          height: 40px;
+          width: 100px;
+          flex-shrink: 0;
+          align-self: center;
+          margin-left: auto;
         }
 
         .clear-filters-btn:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
-          color: #475467;
+          background: rgba(220, 38, 38, 0.08);
+          color: #dc2626;
         }
 
         @media (max-width: 1100px) {
@@ -554,7 +561,7 @@ export default function FeaturedPage() {
                 <div className="filter-container">
                   <span className="filter-label">Filter by:</span>
                   <select 
-                    className="filter-select" 
+                    className="filter-select status-select" 
                     value={statusFilter} 
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
@@ -566,7 +573,7 @@ export default function FeaturedPage() {
                   </select>
 
                   <select 
-                    className="filter-select" 
+                    className="filter-select priority-select" 
                     value={priorityFilter} 
                     onChange={(e) => setPriorityFilter(e.target.value)}
                   >
@@ -574,32 +581,43 @@ export default function FeaturedPage() {
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
                   </select>
 
                   <select 
-                    className="filter-select" 
+                    className="filter-select category-select" 
                     value={categoryFilter} 
                     onChange={(e) => setCategoryFilter(e.target.value)}
                   >
                     <option value="all">All Category</option>
-                    <option value="Hardware">Hardware</option>
-                    <option value="Software">Software</option>
-                    <option value="Network">Network</option>
-                    <option value="Facilities">Facilities</option>
+                    <option value="Classroom Facilities">Classroom Facilities</option>
+                    <option value="Laboratory Equipment">Laboratory Equipment</option>
+                    <option value="IT / Network">IT / Network</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Air Conditioning / Ventilation">Air Conditioning / Ventilation</option>
+                    <option value="Plumbing / Water">Plumbing / Water</option>
+                    <option value="Cleanliness / Housekeeping">Cleanliness / Housekeeping</option>
+                    <option value="Safety Hazard">Safety Hazard</option>
                     <option value="Other">Other</option>
                   </select>
 
                   <select 
-                    className="filter-select" 
+                    className="filter-select building-select" 
                     value={buildingFilter} 
                     onChange={(e) => setBuildingFilter(e.target.value)}
                   >
                     <option value="all">All Buildings</option>
-                    {getUniqueBuildingValues().map((building) => (
-                      <option key={building} value={building}>
-                        {building}
-                      </option>
-                    ))}
+                    <option value="Main Building">Main Building</option>
+                    <option value="Engineering Building">Engineering Building</option>
+                    <option value="Computing Building">Computing Building</option>
+                    <option value="Library">Library</option>
+                    <option value="Administration Block">Administration Block</option>
+                    <option value="Auditorium">Auditorium</option>
+                    <option value="Student Center">Student Center</option>
+                    <option value="Hostel Area">Hostel Area</option>
+                    <option value="Parking Area">Parking Area</option>
+                    <option value="Other">Other</option>
                   </select>
 
                   {(statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all" || buildingFilter !== "all") && (
