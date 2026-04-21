@@ -25,6 +25,9 @@ export default function AdminPage() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [pendingScrollCommentId, setPendingScrollCommentId] = useState(null);
+  const [techTeamFilter, setTechTeamFilter] = useState("all");
+  const [techSpecFilter, setTechSpecFilter] = useState("all");
+  const [techStatusFilter, setTechStatusFilter] = useState("all");
   const discussionNodeRefs = useRef({});
 
   useEffect(() => {
@@ -67,6 +70,30 @@ export default function AdminPage() {
     () => new Set(technicians.map((t) => t.email)),
     [technicians]
   );
+
+  const uniqueTeams = useMemo(() => {
+    const teams = new Set(technicians.map((t) => t.team).filter(Boolean));
+    return Array.from(teams).sort();
+  }, [technicians]);
+
+  const uniqueSpecializations = useMemo(() => {
+    const specs = new Set(technicians.map((t) => t.specialization).filter(Boolean));
+    return Array.from(specs).sort();
+  }, [technicians]);
+
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set(technicians.map((t) => t.status).filter(Boolean));
+    return Array.from(statuses).sort();
+  }, [technicians]);
+
+  const filteredTechnicians = useMemo(() => {
+    return technicians.filter((tech) => {
+      const teamMatch = techTeamFilter === "all" || tech.team === techTeamFilter;
+      const specMatch = techSpecFilter === "all" || tech.specialization === techSpecFilter;
+      const statusMatch = techStatusFilter === "all" || tech.status === techStatusFilter;
+      return teamMatch && specMatch && statusMatch;
+    });
+  }, [technicians, techTeamFilter, techSpecFilter, techStatusFilter]);
 
   const formatDateTime = (value) => {
     if (!value) return "—";
@@ -897,6 +924,82 @@ export default function AdminPage() {
           word-break: break-word;
         }
 
+        .tech-filter-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          margin-bottom: 18px;
+          padding: 16px 20px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+        }
+
+        .tech-filter-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #667085;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          white-space: nowrap;
+          align-self: center;
+        }
+
+        .tech-filter-select {
+          padding: 10px 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #111827;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          appearance: none;
+          padding-right: 28px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23667085' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 8px center;
+          height: 40px;
+          flex-shrink: 0;
+          min-width: 140px;
+        }
+
+        .tech-filter-select:hover {
+          border-color: #cbd5e1;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .tech-filter-select:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .clear-tech-filters-btn {
+          padding: 10px 12px;
+          border: 1px solid #dc2626;
+          background: transparent;
+          color: #dc2626;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+          height: 40px;
+          flex-shrink: 0;
+          align-self: center;
+          margin-left: auto;
+        }
+
+        .clear-tech-filters-btn:hover {
+          background: rgba(220, 38, 38, 0.08);
+          color: #dc2626;
+        }
+
         .tech-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1070,6 +1173,25 @@ export default function AdminPage() {
 
           .page-title {
             font-size: 38px;
+          }
+
+          .tech-filter-container {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .tech-filter-label {
+            align-self: flex-start;
+          }
+
+          .tech-filter-select {
+            width: 100%;
+            min-width: unset;
+          }
+
+          .clear-tech-filters-btn {
+            margin-left: 0;
+            width: 100%;
           }
         }
       `}</style>
@@ -1318,31 +1440,93 @@ export default function AdminPage() {
                 {selectedIssue.status === "OPEN" && (
                   <div className="section">
                     <div className="section-title">Assign Technician</div>
+                    
+                    <div className="tech-filter-container">
+                      <span className="tech-filter-label">Filter by:</span>
+                      <select
+                        className="tech-filter-select"
+                        value={techTeamFilter}
+                        onChange={(e) => setTechTeamFilter(e.target.value)}
+                      >
+                        <option value="all">All Teams</option>
+                        {uniqueTeams.map((team) => (
+                          <option key={team} value={team}>
+                            {team}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        className="tech-filter-select"
+                        value={techSpecFilter}
+                        onChange={(e) => setTechSpecFilter(e.target.value)}
+                      >
+                        <option value="all">All Specializations</option>
+                        {uniqueSpecializations.map((spec) => (
+                          <option key={spec} value={spec}>
+                            {spec}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        className="tech-filter-select"
+                        value={techStatusFilter}
+                        onChange={(e) => setTechStatusFilter(e.target.value)}
+                      >
+                        <option value="all">All Status</option>
+                        {uniqueStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+
+                      {(techTeamFilter !== "all" || techSpecFilter !== "all" || techStatusFilter !== "all") && (
+                        <button
+                          className="clear-tech-filters-btn"
+                          onClick={() => {
+                            setTechTeamFilter("all");
+                            setTechSpecFilter("all");
+                            setTechStatusFilter("all");
+                          }}
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+
                     <div className="tech-grid">
-                      {technicians.map((tech) => {
-                        const assigned =
-                          selectedIssue.assignedTechnicianEmail === tech.email;
+                      {filteredTechnicians.length === 0 ? (
+                        <div className="empty-note" style={{ gridColumn: "1 / -1" }}>
+                          No technicians match the selected filters.
+                        </div>
+                      ) : (
+                        filteredTechnicians.map((tech) => {
+                          const assigned =
+                            selectedIssue.assignedTechnicianEmail === tech.email;
 
-                        return (
-                          <div className="tech-card" key={tech.id}>
-                            <div className="tech-name">{tech.name}</div>
-                            <div className="tech-team">{tech.team}</div>
-                            <div className="tech-spec">{tech.specialization}</div>
-                            <div className="tech-email">{tech.email}</div>
-                            <div className="tech-phone">{tech.phone}</div>
-                            <div className="tech-phone">Status: {tech.status}</div>
+                          return (
+                            <div className="tech-card" key={tech.id}>
+                              <div className="tech-name">{tech.name}</div>
+                              <div className="tech-team">{tech.team}</div>
+                              <div className="tech-spec">{tech.specialization}</div>
+                              <div className="tech-email">{tech.email}</div>
+                              <div className="tech-phone">{tech.phone}</div>
+                              <div className="tech-phone">Status: {tech.status}</div>
 
-                            <button
-                              className="assign-btn"
-                              onClick={() =>
-                                handleAssignTechnician(selectedIssue.id, tech.id)
-                              }
-                            >
-                              {assigned ? "Assigned ✓" : "Assign Technician"}
-                            </button>
-                          </div>
-                        );
-                      })}
+                              <button
+                                className="assign-btn"
+                                onClick={() =>
+                                  handleAssignTechnician(selectedIssue.id, tech.id)
+                                }
+                              >
+                                {assigned ? "Assigned ✓" : "Assign Technician"}
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 )}
