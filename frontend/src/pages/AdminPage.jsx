@@ -489,6 +489,37 @@ export default function AdminPage() {
           padding: 24px 22px 50px;
         }
 
+        .page-header {
+          padding: 8px 4px 20px;
+          margin-bottom: 6px;
+        }
+
+        .page-eyebrow {
+          display: inline-block;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #2563eb;
+          margin-bottom: 0.01px;
+        }
+
+        .page-title {
+          font-size: 50px;
+          line-height: 1.05;
+          font-weight: 800;
+          color: #111827;
+          margin-bottom: 10px;
+          letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+          font-size: 18px;
+          line-height: 1.75;
+          color: #667085;
+          max-width: 860px;
+        }
+
         .summary-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1036,10 +1067,22 @@ export default function AdminPage() {
           .detail-title {
             font-size: 28px;
           }
+
+          .page-title {
+            font-size: 38px;
+          }
         }
       `}</style>
 
       <div className="admin-shell">
+        <section className="page-header">
+          <div className="page-eyebrow">Administration</div>
+          <h1 className="page-title">Ticket Management</h1>
+          <p className="page-subtitle">
+            Monitor and manage all support tickets across the helpdesk system.
+          </p>
+        </section>
+
         <div className="summary-grid">
           <div className="summary-card">
             <div className="summary-label">Total Active</div>
