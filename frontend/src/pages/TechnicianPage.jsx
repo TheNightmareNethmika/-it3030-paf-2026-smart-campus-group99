@@ -311,6 +311,10 @@ export default function TechnicianPage() {
   };
 
   const renderDiscussionNode = (comment, level = 0) => {
+    const isOwnTechnicianComment =
+      selectedIssue?.assignedTechnicianEmail &&
+      comment.authorEmail === selectedIssue.assignedTechnicianEmail;
+
     return (
       <div
         key={comment.id}
@@ -350,7 +354,7 @@ export default function TechnicianPage() {
               Reply
             </button>
 
-            {comment.authorEmail !== "admin@helpdesk.edu" && (
+            {isOwnTechnicianComment && (
               <>
                 <button
                   type="button"
@@ -1242,6 +1246,27 @@ export default function TechnicianPage() {
 
                 <div className="section">
                   <div className="section-title">Technician Communication</div>
+
+                  {replyToComment && (
+                    <div className="conversation-card" style={{ marginBottom: "12px" }}>
+                      <div className="conversation-top">
+                        Replying to <span className="conversation-author">{replyToComment.authorName}</span>
+                      </div>
+                      <div className="conversation-text">{replyToComment.text}</div>
+                      <div style={{ marginTop: "10px" }}>
+                        <button
+                          className="danger-btn"
+                          onClick={() => {
+                            setReplyToComment(null);
+                            setTechnicianNote("");
+                          }}
+                        >
+                          Cancel Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="technician-note-box">
                     <textarea
                       placeholder={
@@ -1253,17 +1278,6 @@ export default function TechnicianPage() {
                       onChange={(e) => setTechnicianNote(e.target.value)}
                     />
                     <div className="technician-note-actions">
-                      {replyToComment && (
-                        <button
-                          className="danger-btn"
-                          onClick={() => {
-                            setReplyToComment(null);
-                            setTechnicianNote("");
-                          }}
-                        >
-                          Cancel Reply
-                        </button>
-                      )}
                       <button
                         className="technician-note-btn"
                         onClick={handleTechnicianComment}
