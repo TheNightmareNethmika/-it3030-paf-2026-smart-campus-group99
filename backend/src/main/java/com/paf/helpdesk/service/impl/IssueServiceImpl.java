@@ -310,6 +310,7 @@ public class IssueServiceImpl implements IssueService {
         response.setAssignedTechnicianEmail(issue.getAssignedTechnicianEmail());
         response.setAssignedTeam(issue.getAssignedTeam());
         response.setAssignedAt(issue.getAssignedAt());
+        response.setTechnicianStatus(issue.getTechnicianStatus());
         response.setVisibleToAdmin(issue.isVisibleToAdmin());
 
 

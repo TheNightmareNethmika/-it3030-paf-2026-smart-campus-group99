@@ -25,6 +25,7 @@ public class IssueResponse {
     private String assignedTechnicianEmail;
     private String assignedTeam;
     private LocalDateTime assignedAt;
+    private String technicianStatus;
     private List<CommentResponse> comments;
     private List<String> imageUrls;
     private boolean visibleToAdmin;
@@ -198,6 +199,14 @@ public class IssueResponse {
 
     public void setAssignedAt(LocalDateTime assignedAt) {
         this.assignedAt = assignedAt;
+    }
+
+    public String getTechnicianStatus() {
+        return technicianStatus;
+    }
+
+    public void setTechnicianStatus(String technicianStatus) {
+        this.technicianStatus = technicianStatus;
     }
 
     public boolean isVisibleToAdmin() {

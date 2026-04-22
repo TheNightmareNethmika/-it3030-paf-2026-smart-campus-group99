@@ -1,16 +1,14 @@
 package com.paf.helpdesk.service.impl;
 
+import com.paf.helpdesk.dto.CommentRequest;
 import com.paf.helpdesk.dto.CommentResponse;
 import com.paf.helpdesk.dto.IssueResponse;
-import com.paf.helpdesk.dto.TechnicianResponse;
 import com.paf.helpdesk.entity.Comment;
 import com.paf.helpdesk.entity.Issue;
-import com.paf.helpdesk.entity.Technician;
 import com.paf.helpdesk.exception.ResourceNotFoundException;
 import com.paf.helpdesk.repository.CommentRepository;
 import com.paf.helpdesk.repository.IssueRepository;
-import com.paf.helpdesk.repository.TechnicianRepository;
-import com.paf.helpdesk.service.AdminService;
+import com.paf.helpdesk.service.TechnicianService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,35 +17,36 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class AdminServiceImpl implements AdminService {
+public class TechnicianServiceImpl implements TechnicianService {
 
     private final IssueRepository issueRepository;
-    private final TechnicianRepository technicianRepository;
     private final CommentRepository commentRepository;
 
-    public AdminServiceImpl(IssueRepository issueRepository,
-                            TechnicianRepository technicianRepository,
-                            CommentRepository commentRepository) {
+    public TechnicianServiceImpl(IssueRepository issueRepository,
+                                 CommentRepository commentRepository) {
         this.issueRepository = issueRepository;
-        this.technicianRepository = technicianRepository;
         this.commentRepository = commentRepository;
     }
 
     @Override
-    public List<IssueResponse> getAdminIssues() {
-        return issueRepository.findByVisibleToAdminTrueOrderByIdDesc()
+    public List<IssueResponse> getTechnicianIssues() {
+        return getAssignedIssues()
                 .stream()
-                .filter(issue -> !"CLOSED".equalsIgnoreCase(issue.getStatus()))
                 .map(this::mapToIssueResponse)
                 .toList();
     }
 
     @Override
-    public List<TechnicianResponse> getTechnicians() {
-        return technicianRepository.findAllByOrderByTeamAscNameAsc()
-                .stream()
-                .map(this::mapToTechnicianResponse)
-                .toList();
+    public Map<String, Long> getTechnicianSummary() {
+        List<Issue> issues = getAssignedIssues();
+
+        Map<String, Long> summary = new LinkedHashMap<>();
+        summary.put("total", (long) issues.size());
+        summary.put("assigned", issues.stream().filter(i -> "ASSIGNED".equalsIgnoreCase(i.getTechnicianStatus())).count());
+        summary.put("inProgress", issues.stream().filter(i -> "IN PROGRESS".equalsIgnoreCase(i.getTechnicianStatus())).count());
+        summary.put("resolved", issues.stream().filter(i -> "RESOLVED".equalsIgnoreCase(i.getTechnicianStatus())).count());
+
+        return summary;
     }
 
     @Override
@@ -55,73 +54,54 @@ public class AdminServiceImpl implements AdminService {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
+        ensureIssueAssigned(issue);
+
         String normalized = status == null ? "" : status.trim().toUpperCase();
 
         if (!List.of("IN PROGRESS", "RESOLVED").contains(normalized)) {
-            throw new IllegalArgumentException("Admin can set only IN PROGRESS or RESOLVED.");
+            throw new IllegalArgumentException("Technician can set only IN PROGRESS or RESOLVED.");
         }
 
-        if ("OPEN".equalsIgnoreCase(issue.getStatus())) {
+        if ("ASSIGNED".equalsIgnoreCase(issue.getTechnicianStatus())) {
             if (!"IN PROGRESS".equals(normalized)) {
-                throw new IllegalArgumentException("Open issues can only be moved to IN PROGRESS.");
-            }
-
-            if (issue.getAssignedTechnicianEmail() == null || issue.getAssignedTechnicianEmail().isBlank()) {
-                throw new IllegalArgumentException("Assign a technician before setting IN PROGRESS.");
+                throw new IllegalArgumentException("Assigned issues can only be moved to IN PROGRESS.");
             }
         }
 
-        if ("IN PROGRESS".equalsIgnoreCase(issue.getStatus())) {
+        if ("IN PROGRESS".equalsIgnoreCase(issue.getTechnicianStatus())) {
             if (!"RESOLVED".equals(normalized)) {
                 throw new IllegalArgumentException("In-progress issues can only be moved to RESOLVED.");
             }
         }
 
-        if ("RESOLVED".equalsIgnoreCase(issue.getStatus())) {
-            throw new IllegalArgumentException("Resolved issues cannot be moved further by admin.");
+        if ("RESOLVED".equalsIgnoreCase(issue.getTechnicianStatus())) {
+            throw new IllegalArgumentException("Resolved issues cannot be moved further by technician.");
         }
 
-        issue.setStatus(normalized);
+        issue.setTechnicianStatus(normalized);
         issueRepository.save(issue);
 
         return mapToIssueResponse(issue);
     }
 
     @Override
-    public IssueResponse assignTechnician(Long issueId, Long technicianId) {
+    public IssueResponse addComment(Long issueId, CommentRequest request) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
-        Technician technician = technicianRepository.findById(technicianId)
-                .orElseThrow(() -> new ResourceNotFoundException("Technician not found with id: " + technicianId));
+        ensureIssueAssigned(issue);
 
-        issue.setAssignedTechnicianName(technician.getName());
-        issue.setAssignedTechnicianEmail(technician.getEmail());
-        issue.setAssignedTeam(technician.getTeam());
-        issue.setAssignedAt(LocalDateTime.now());
-        issue.setTechnicianStatus("ASSIGNED");
-
-        issueRepository.save(issue);
-
-        return mapToIssueResponse(issue);
-    }
-
-    @Override
-    public IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId) {
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
-
-        if (text == null || text.trim().isEmpty()) {
+        if (request.getText() == null || request.getText().trim().isEmpty()) {
             throw new IllegalArgumentException("Comment cannot be empty.");
         }
 
         Comment comment = new Comment();
-        comment.setAuthorName("Admin Control Desk");
-        comment.setAuthorEmail("admin@helpdesk.edu");
-        comment.setText(text.trim());
+        comment.setAuthorName(issue.getAssignedTechnicianName());
+        comment.setAuthorEmail(issue.getAssignedTechnicianEmail());
+        comment.setText(request.getText().trim());
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
-        comment.setParentCommentId(parentCommentId);
+        comment.setParentCommentId(request.getParentCommentId());
 
         commentRepository.save(comment);
 
@@ -132,9 +112,11 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public IssueResponse updateAdminComment(Long issueId, Long commentId, String text) {
+    public void updateComment(Long issueId, Long commentId, String text) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        ensureIssueAssigned(issue);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -143,8 +125,8 @@ public class AdminServiceImpl implements AdminService {
             throw new ResourceNotFoundException("Comment does not belong to this issue");
         }
 
-        if (!"admin@helpdesk.edu".equalsIgnoreCase(comment.getAuthorEmail())) {
-            throw new IllegalArgumentException("Admin can edit only admin comments.");
+        if (!issue.getAssignedTechnicianEmail().equalsIgnoreCase(comment.getAuthorEmail())) {
+            throw new IllegalArgumentException("Technician can edit only their own comments.");
         }
 
         if (text == null || text.trim().isEmpty()) {
@@ -153,17 +135,14 @@ public class AdminServiceImpl implements AdminService {
 
         comment.setText(text.trim());
         commentRepository.save(comment);
-
-        return mapToIssueResponse(
-                issueRepository.findById(issueId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId))
-        );
     }
 
     @Override
-    public void deleteAdminComment(Long issueId, Long commentId) {
+    public void deleteComment(Long issueId, Long commentId) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        ensureIssueAssigned(issue);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment not found with id: " + commentId));
@@ -172,41 +151,30 @@ public class AdminServiceImpl implements AdminService {
             throw new ResourceNotFoundException("Comment does not belong to this issue");
         }
 
-        if (!"admin@helpdesk.edu".equalsIgnoreCase(comment.getAuthorEmail())) {
-            throw new IllegalArgumentException("Admin can delete only admin comments.");
+        if (!issue.getAssignedTechnicianEmail().equalsIgnoreCase(comment.getAuthorEmail())) {
+            throw new IllegalArgumentException("Technician can delete only their own comments.");
         }
 
         commentRepository.delete(comment);
     }
 
-    @Override
-    public void deleteResolvedIssue(Long issueId) {
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
-
-        if (!"RESOLVED".equalsIgnoreCase(issue.getStatus())) {
-            throw new IllegalArgumentException("Only resolved issues can be removed from admin workflow.");
-        }
-
-        issue.setVisibleToAdmin(false);
-        issueRepository.save(issue);
+    private List<Issue> getAssignedIssues() {
+        return issueRepository.findByTechnicianStatusIsNotNullOrderByAssignedAtDesc()
+                .stream()
+                .filter(issue -> issue.getAssignedTechnicianEmail() != null)
+                .filter(issue -> !issue.getAssignedTechnicianEmail().isBlank())
+                .filter(issue -> !"CLOSED".equalsIgnoreCase(issue.getStatus()))
+                .toList();
     }
 
-    @Override
-    public Map<String, Long> getSummary() {
-        List<Issue> issues = issueRepository.findByVisibleToAdminTrueOrderByIdDesc()
-                .stream()
-                .filter(i -> !"CLOSED".equalsIgnoreCase(i.getStatus()))
-                .toList();
+    private void ensureIssueAssigned(Issue issue) {
+        if (issue.getAssignedTechnicianEmail() == null || issue.getAssignedTechnicianEmail().isBlank()) {
+            throw new IllegalArgumentException("Issue is not assigned to a technician.");
+        }
 
-        Map<String, Long> summary = new LinkedHashMap<>();
-        summary.put("total", (long) issues.size());
-        summary.put("open", issues.stream().filter(i -> "OPEN".equalsIgnoreCase(i.getStatus())).count());
-        summary.put("inProgress", issues.stream().filter(i -> "IN PROGRESS".equalsIgnoreCase(i.getStatus())).count());
-        summary.put("resolved", issues.stream().filter(i -> "RESOLVED".equalsIgnoreCase(i.getStatus())).count());
-        summary.put("unassigned", issues.stream().filter(i -> i.getAssignedTechnicianEmail() == null || i.getAssignedTechnicianEmail().isBlank()).count());
-
-        return summary;
+        if (issue.getTechnicianStatus() == null || issue.getTechnicianStatus().isBlank()) {
+            throw new IllegalArgumentException("Issue is not active in the technician workflow.");
+        }
     }
 
     private IssueResponse mapToIssueResponse(Issue issue) {
@@ -254,18 +222,6 @@ public class AdminServiceImpl implements AdminService {
         response.setCreatedAt(comment.getCreatedAt());
         response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
-        return response;
-    }
-
-    private TechnicianResponse mapToTechnicianResponse(Technician technician) {
-        TechnicianResponse response = new TechnicianResponse();
-        response.setId(technician.getId());
-        response.setName(technician.getName());
-        response.setEmail(technician.getEmail());
-        response.setTeam(technician.getTeam());
-        response.setSpecialization(technician.getSpecialization());
-        response.setPhone(technician.getPhone());
-        response.setStatus(technician.getStatus());
         return response;
     }
 }

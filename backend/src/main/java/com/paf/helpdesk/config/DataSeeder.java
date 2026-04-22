@@ -21,6 +21,7 @@ public class DataSeeder {
     CommandLineRunner seedDatabase(IssueRepository issueRepository, TechnicianRepository technicianRepository) {
         return args -> {
             if (issueRepository.count() > 0 || technicianRepository.count() > 0) {
+                initializeDemoTechnicianStatuses(issueRepository);
                 return;
             }
 
@@ -87,6 +88,7 @@ public class DataSeeder {
             t1.setReporterName("Nimal Perera");
             t1.setReporterEmail("nimal@university.edu");
             t1.setStatus("IN PROGRESS");
+            t1.setTechnicianStatus("IN PROGRESS");
             t1.setCreatedAt(LocalDateTime.of(2026, 4, 1, 9, 15));
             t1.setAssignedTechnicianName(tech1.getName());
             t1.setAssignedTechnicianEmail(tech1.getEmail());
@@ -126,6 +128,7 @@ public class DataSeeder {
             t2.setReporterName("Ayesha Silva");
             t2.setReporterEmail("ayesha@university.edu");
             t2.setStatus("OPEN");
+            t2.setTechnicianStatus("ASSIGNED");
             t2.setCreatedAt(LocalDateTime.of(2026, 3, 31, 11, 20));
             t2.setAssignedTechnicianName(tech3.getName());
             t2.setAssignedTechnicianEmail(tech3.getEmail());
@@ -164,6 +167,7 @@ public class DataSeeder {
             t3.setReporterName("Sahan Jayawardena");
             t3.setReporterEmail("sahan@university.edu");
             t3.setStatus("RESOLVED");
+            t3.setTechnicianStatus("RESOLVED");
             t3.setCreatedAt(LocalDateTime.of(2026, 4, 2, 7, 50));
             t3.setAssignedTechnicianName(tech5.getName());
             t3.setAssignedTechnicianEmail(tech5.getEmail());
@@ -183,6 +187,31 @@ public class DataSeeder {
 
             issueRepository.saveAll(issues);
         };
+    }
+
+    private void initializeDemoTechnicianStatuses(IssueRepository issueRepository) {
+        List<Issue> updatedIssues = issueRepository.findAll()
+                .stream()
+                .filter(issue -> issue.getTechnicianStatus() == null || issue.getTechnicianStatus().isBlank())
+                .filter(issue -> issue.getAssignedTechnicianEmail() != null && !issue.getAssignedTechnicianEmail().isBlank())
+                .filter(issue ->
+                        "Projector flickering in Lecture Hall A".equals(issue.getTitle()) ||
+                        "Broken chair in Computer Lab 03".equals(issue.getTitle()) ||
+                        "Water leakage near library entrance".equals(issue.getTitle()))
+                .peek(issue -> {
+                    if ("Projector flickering in Lecture Hall A".equals(issue.getTitle())) {
+                        issue.setTechnicianStatus("IN PROGRESS");
+                    } else if ("Broken chair in Computer Lab 03".equals(issue.getTitle())) {
+                        issue.setTechnicianStatus("ASSIGNED");
+                    } else if ("Water leakage near library entrance".equals(issue.getTitle())) {
+                        issue.setTechnicianStatus("RESOLVED");
+                    }
+                })
+                .toList();
+
+        if (!updatedIssues.isEmpty()) {
+            issueRepository.saveAll(updatedIssues);
+        }
     }
 
     private Technician technician(String name, String email, String team, String specialization, String phone, String status) {
