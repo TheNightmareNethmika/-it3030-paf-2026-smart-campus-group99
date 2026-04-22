@@ -107,7 +107,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId) {
+    public IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId, String visibility) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
@@ -122,13 +122,12 @@ public class AdminServiceImpl implements AdminService {
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
         comment.setParentCommentId(parentCommentId);
+        comment.setVisibility(resolveCommentVisibility(issue, parentCommentId, visibility));
 
-        commentRepository.save(comment);
+        Comment savedComment = commentRepository.saveAndFlush(comment);
+        issue.getComments().add(savedComment);
 
-        return mapToIssueResponse(
-                issueRepository.findById(issueId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId))
-        );
+        return mapToIssueResponse(issue);
     }
 
     @Override
@@ -254,7 +253,21 @@ public class AdminServiceImpl implements AdminService {
         response.setCreatedAt(comment.getCreatedAt());
         response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
+        response.setVisibility(comment.getVisibility());
         return response;
+    }
+
+    private String resolveCommentVisibility(Issue issue, Long parentCommentId, String requestedVisibility) {
+        if (parentCommentId != null) {
+            return issue.getComments()
+                    .stream()
+                    .filter(comment -> parentCommentId.equals(comment.getId()))
+                    .findFirst()
+                    .map(Comment::getVisibility)
+                    .orElse("PUBLIC");
+        }
+
+        return "PRIVATE".equalsIgnoreCase(requestedVisibility) ? "PRIVATE" : "PUBLIC";
     }
 
     private TechnicianResponse mapToTechnicianResponse(Technician technician) {

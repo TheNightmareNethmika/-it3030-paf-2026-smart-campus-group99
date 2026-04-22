@@ -102,13 +102,12 @@ public class TechnicianServiceImpl implements TechnicianService {
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
         comment.setParentCommentId(request.getParentCommentId());
+        comment.setVisibility(resolveCommentVisibility(issue, request.getParentCommentId(), request.getVisibility()));
 
-        commentRepository.save(comment);
+        Comment savedComment = commentRepository.saveAndFlush(comment);
+        issue.getComments().add(savedComment);
 
-        return mapToIssueResponse(
-                issueRepository.findById(issueId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId))
-        );
+        return mapToIssueResponse(issue);
     }
 
     @Override
@@ -222,6 +221,20 @@ public class TechnicianServiceImpl implements TechnicianService {
         response.setCreatedAt(comment.getCreatedAt());
         response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
+        response.setVisibility(comment.getVisibility());
         return response;
+    }
+
+    private String resolveCommentVisibility(Issue issue, Long parentCommentId, String requestedVisibility) {
+        if (parentCommentId != null) {
+            return issue.getComments()
+                    .stream()
+                    .filter(comment -> parentCommentId.equals(comment.getId()))
+                    .findFirst()
+                    .map(Comment::getVisibility)
+                    .orElse("PUBLIC");
+        }
+
+        return "PRIVATE".equalsIgnoreCase(requestedVisibility) ? "PRIVATE" : "PUBLIC";
     }
 }

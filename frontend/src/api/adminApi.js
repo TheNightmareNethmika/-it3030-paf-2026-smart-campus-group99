@@ -10,8 +10,8 @@ export const updateAdminIssueStatus = (issueId, status) =>
 export const assignIssueTechnician = (issueId, technicianId) =>
   api.patch(`/admin/issues/${issueId}/assign`, { technicianId });
 
-export const addAdminComment = (issueId, text, parentCommentId = null) =>
-  api.post(`/admin/issues/${issueId}/comments`, { text, parentCommentId });
+export const addAdminComment = (issueId, text, parentCommentId = null, visibility = "PUBLIC") =>
+  api.post(`/admin/issues/${issueId}/comments`, { text, parentCommentId, visibility });
 
 export const updateAdminComment = (issueId, commentId, text) =>
   api.patch(`/admin/issues/${issueId}/comments/${commentId}`, { text });

@@ -53,7 +53,7 @@ public class AdminController {
     @PostMapping("/issues/{issueId}/comments")
     public IssueResponse addAdminComment(@PathVariable Long issueId,
                                          @RequestBody CommentRequest request) {
-        return adminService.addAdminComment(issueId, request.getText(), request.getParentCommentId());
+        return adminService.addAdminComment(issueId, request.getText(), request.getParentCommentId(), request.getVisibility());
     }
 
     @PatchMapping("/issues/{issueId}/comments/{commentId}")

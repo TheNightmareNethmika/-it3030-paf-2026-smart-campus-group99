@@ -11,6 +11,21 @@ import {
   updateAdminIssueStatus,
 } from "../api/adminApi";
 
+const loadReadCommentIds = (key) => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const saveReadCommentIds = (key, ids) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key, JSON.stringify(ids));
+};
+
 export default function AdminPage() {
   const [issues, setIssues] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -21,6 +36,11 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [adminNote, setAdminNote] = useState("");
   const [replyToComment, setReplyToComment] = useState(null);
+  const [adminMessageVisibility, setAdminMessageVisibility] = useState("PUBLIC");
+  const [technicianAlertTab, setTechnicianAlertTab] = useState("PUBLIC");
+  const [readPrivateTechnicianAlertIds, setReadPrivateTechnicianAlertIds] = useState(() =>
+    loadReadCommentIds("helpdesk-admin-read-private-technician-alerts")
+  );
   const [previewImage, setPreviewImage] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
@@ -156,6 +176,9 @@ export default function AdminPage() {
 
   const issueImages = selectedIssue?.imageUrls || [];
 
+  const getCommentVisibility = (comment) =>
+    comment?.visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC";
+
   const latestTechnicianAlert = (issue) => {
     const updates = (issue.comments || [])
       .filter((comment) => technicianEmails.has(comment.authorEmail))
@@ -206,6 +229,43 @@ export default function AdminPage() {
       });
   }, [selectedIssue, technicianEmails]);
 
+  const publicTechnicianAlerts = useMemo(
+    () => technicianAlerts.filter((comment) => getCommentVisibility(comment) === "PUBLIC"),
+    [technicianAlerts]
+  );
+
+  const privateTechnicianAlerts = useMemo(
+    () => technicianAlerts.filter((comment) => getCommentVisibility(comment) === "PRIVATE"),
+    [technicianAlerts]
+  );
+
+  const unreadPrivateTechnicianAlerts = useMemo(
+    () =>
+      privateTechnicianAlerts.filter(
+        (comment) => !readPrivateTechnicianAlertIds.includes(comment.id)
+      ),
+    [privateTechnicianAlerts, readPrivateTechnicianAlertIds]
+  );
+
+  const visibleTechnicianAlerts =
+    technicianAlertTab === "PRIVATE" ? privateTechnicianAlerts : publicTechnicianAlerts;
+
+  useEffect(() => {
+    if (technicianAlertTab !== "PRIVATE" || privateTechnicianAlerts.length === 0) {
+      return;
+    }
+
+    setReadPrivateTechnicianAlertIds((prev) => {
+      const merged = Array.from(
+        new Set([...prev, ...privateTechnicianAlerts.map((comment) => comment.id)])
+      );
+
+      if (merged.length === prev.length) return prev;
+      saveReadCommentIds("helpdesk-admin-read-private-technician-alerts", merged);
+      return merged;
+    });
+  }, [technicianAlertTab, privateTechnicianAlerts]);
+
   const handleStatusChange = async (issueId, status) => {
     try {
       await updateAdminIssueStatus(issueId, status);
@@ -243,7 +303,8 @@ export default function AdminPage() {
       const response = await addAdminComment(
         selectedIssue.id,
         trimmed,
-        parentCommentId
+        parentCommentId,
+        replyToComment ? getCommentVisibility(replyToComment) : adminMessageVisibility
       );
 
       const updatedIssue = response.data;
@@ -255,6 +316,7 @@ export default function AdminPage() {
       setSelectedIssueId(updatedIssue.id);
       setAdminNote("");
       setReplyToComment(null);
+      setAdminMessageVisibility("PUBLIC");
 
       const newestMatchingComment = [...(updatedIssue.comments || [])]
         .filter(
@@ -275,6 +337,7 @@ export default function AdminPage() {
 
   const handleReplyToComment = (comment) => {
     setReplyToComment(comment);
+    setAdminMessageVisibility(getCommentVisibility(comment));
     setAdminNote("");
 
     setTimeout(() => {
@@ -394,6 +457,11 @@ export default function AdminPage() {
             {formatDateTime(comment.createdAt)}
           </div>
           <div className="conversation-text">{comment.text}</div>
+          {getCommentVisibility(comment) === "PRIVATE" && (
+            <div style={{ marginTop: "8px" }}>
+              <span className="private-chip">PRIVATE</span>
+            </div>
+          )}
 
           <div style={{ marginTop: "12px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
             <button
@@ -620,6 +688,102 @@ export default function AdminPage() {
           border-color: #2563eb;
           color: #ffffff;
           box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+        }
+
+        .alert-tabs {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 4px;
+          padding: 3px;
+          border: 1px solid #edf2f7;
+          border-radius: 12px;
+          background: #ffffff;
+          margin-bottom: 16px;
+          width: 100%;
+        }
+
+        .alert-tab {
+          width: 100%;
+          border: none;
+          border-radius: 9px;
+          padding: 7px 11px;
+          background: transparent;
+          color: #667085;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .alert-tab.active {
+          background: #f1f5f9;
+          color: #111827;
+        }
+
+        .private-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 20px;
+          height: 20px;
+          margin-left: 6px;
+          padding: 0 6px;
+          border-radius: 999px;
+          background: #fee2e2;
+          color: #b91c1c;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .private-chip {
+          display: inline-flex;
+          align-items: center;
+          border-radius: 999px;
+          padding: 4px 8px;
+          background: #fee2e2;
+          color: #b91c1c;
+          font-size: 11px;
+          font-weight: 900;
+          margin-left: 8px;
+        }
+
+        .reply-link {
+          border: none;
+          background: transparent;
+          color: #6b7280;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 4px 6px;
+        }
+
+        .reply-link:hover {
+          color: #2563eb;
+        }
+
+        .channel-toggle {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          padding: 12px 16px;
+          border-bottom: 1px solid #edf2f7;
+          background: #fafcff;
+        }
+
+        .channel-btn {
+          border: 1px solid #d7deea;
+          border-radius: 999px;
+          padding: 8px 12px;
+          background: #ffffff;
+          color: #475467;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .channel-btn.active {
+          border-color: #2563eb;
+          background: #eaf2ff;
+          color: #1d4ed8;
         }
 
         .admin-layout {
@@ -1304,7 +1468,11 @@ export default function AdminPage() {
 
                       {statusFilter === "IN PROGRESS" && alert && (
                         <div className="tech-alert">
-                          <strong>Technician alert:</strong> {alert.text}
+                          <strong>Technician alert:</strong>
+                          {getCommentVisibility(alert) === "PRIVATE" && (
+                            <span className="private-chip">PRIVATE</span>
+                          )}{" "}
+                          {alert.text}
                         </div>
                       )}
                     </div>
@@ -1534,11 +1702,31 @@ export default function AdminPage() {
                 {selectedIssue.status === "IN PROGRESS" && (
                   <div className="section">
                     <div className="section-title">Technician Alerts</div>
-                    {technicianAlerts.length === 0 ? (
+                    <div className="alert-tabs">
+                      <button
+                        type="button"
+                        className={`alert-tab ${technicianAlertTab === "PUBLIC" ? "active" : ""}`}
+                        onClick={() => setTechnicianAlertTab("PUBLIC")}
+                      >
+                        Public
+                      </button>
+                      <button
+                        type="button"
+                        className={`alert-tab ${technicianAlertTab === "PRIVATE" ? "active" : ""}`}
+                        onClick={() => setTechnicianAlertTab("PRIVATE")}
+                      >
+                        Private
+                        {unreadPrivateTechnicianAlerts.length > 0 && technicianAlertTab !== "PRIVATE" && (
+                          <span className="private-badge">{unreadPrivateTechnicianAlerts.length}</span>
+                        )}
+                      </button>
+                    </div>
+
+                    {visibleTechnicianAlerts.length === 0 ? (
                       <div className="empty-note">No technician alerts yet.</div>
                     ) : (
                       <div className="conversation-list">
-                        {technicianAlerts.map((comment) => (
+                        {visibleTechnicianAlerts.map((comment) => (
                           <div
                             className="conversation-card"
                             key={comment.id}
@@ -1552,6 +1740,23 @@ export default function AdminPage() {
                               • {formatDateTime(comment.createdAt)}
                             </div>
                             <div className="conversation-text">{comment.text}</div>
+                            {getCommentVisibility(comment) === "PRIVATE" && (
+                              <div style={{ marginTop: "8px" }}>
+                                <span className="private-chip">PRIVATE</span>
+                              </div>
+                            )}
+                            <div style={{ marginTop: "12px" }}>
+                              <button
+                                type="button"
+                                className="reply-link"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReplyToComment(comment);
+                                }}
+                              >
+                                Reply
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1571,7 +1776,10 @@ export default function AdminPage() {
                       <div style={{ marginTop: "10px" }}>
                         <button
                           className="danger-btn"
-                          onClick={() => setReplyToComment(null)}
+                          onClick={() => {
+                            setReplyToComment(null);
+                            setAdminMessageVisibility("PUBLIC");
+                          }}
                         >
                           Cancel Reply
                         </button>
@@ -1580,8 +1788,25 @@ export default function AdminPage() {
                   )}
 
                   <div className="admin-note-box">
+                    <div className="channel-toggle">
+                      {["PUBLIC", "PRIVATE"].map((visibility) => (
+                        <button
+                          key={visibility}
+                          type="button"
+                          className={`channel-btn ${adminMessageVisibility === visibility ? "active" : ""}`}
+                          disabled={Boolean(replyToComment)}
+                          onClick={() => setAdminMessageVisibility(visibility)}
+                        >
+                          {visibility === "PUBLIC" ? "Public" : "Private"}
+                        </button>
+                      ))}
+                    </div>
                     <textarea
-                      placeholder="Write an admin message or reply. This will appear in the issue discussion and users can see it too."
+                      placeholder={
+                        adminMessageVisibility === "PRIVATE"
+                          ? "Write a private admin message. Only admin and the assigned technician can see it."
+                          : "Write a public admin message. This can appear in featured conversations."
+                      }
                       value={adminNote}
                       onChange={(e) => setAdminNote(e.target.value)}
                     />

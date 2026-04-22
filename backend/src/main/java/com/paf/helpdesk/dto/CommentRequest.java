@@ -4,6 +4,7 @@ public class CommentRequest {
 
     private String text;
     private Long parentCommentId;
+    private String visibility;
 
     public CommentRequest() {
     }
@@ -22,5 +23,13 @@ public class CommentRequest {
 
     public void setParentCommentId(Long parentCommentId) {
         this.parentCommentId = parentCommentId;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
     }
 }
