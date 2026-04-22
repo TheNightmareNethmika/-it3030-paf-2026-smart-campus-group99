@@ -6,6 +6,7 @@ import '../styles/HomePage.css'
 function HomePage() {
   const [stats, setStats] = useState({ total: 0, working: 0, outOfService: 0 })
   const [loading, setLoading] = useState(true)
+  const [animateStats, setAnimateStats] = useState(false)
 
   useEffect(() => {
     resourceApi.getAll()
@@ -16,44 +17,125 @@ function HomePage() {
           working: resources.filter(r => r.status === 'WORKING').length,
           outOfService: resources.filter(r => r.status === 'OUT_OF_SERVICE').length,
         })
+        setAnimateStats(true)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
+  const features = [
+    { 
+      icon: '🏛️', 
+      title: 'Lecture Halls', 
+      desc: 'Large teaching spaces with seating capacity management',
+      color: '#3B82F6'
+    },
+    { 
+      icon: '💻', 
+      title: 'Computer Labs', 
+      desc: 'Technology-equipped rooms for practical sessions',
+      color: '#10B981'
+    },
+    { 
+      icon: '🤝', 
+      title: 'Meeting Rooms', 
+      desc: 'Small collaborative spaces for group work',
+      color: '#8B5CF6'
+    },
+    { 
+      icon: '📽️', 
+      title: 'Projectors', 
+      desc: 'Portable and fixed projection equipment',
+      color: '#F59E0B'
+    },
+    { 
+      icon: '📷', 
+      title: 'Cameras', 
+      desc: 'Recording and surveillance equipment inventory',
+      color: '#EF4444'
+    },
+    { 
+      icon: '📚', 
+      title: 'Study Rooms', 
+      desc: 'Quiet spaces for individual and group study',
+      color: '#6366F1'
+    }
+  ]
+
   return (
     <div className="home-page">
       {/* Hero Section */}
       <section className="hero">
+        <div className="hero-bg">
+          <div className="hero-pattern"></div>
+          <div className="hero-gradient"></div>
+        </div>
         <div className="hero-content">
-          <div className="hero-badge">University Management System</div>
-          <h1 className="hero-title">Smart Campus</h1>
-          <p className="hero-subtitle">Resource Management Portal</p>
+          <div className="hero-badge">🎓 University Management System</div>
+          <h1 className="hero-title">
+            Smart Campus
+            <span className="hero-accent"> Resource Portal</span>
+          </h1>
+          <p className="hero-subtitle">Efficient Campus Resource Management</p>
           <p className="hero-desc">
             Manage university rooms, laboratories, meeting spaces, and equipment
-            from a single, intuitive platform. View availability, add new resources,
+            from a single, intuitive platform. Track availability, add new resources,
             and keep your campus running efficiently.
           </p>
           <div className="hero-actions">
-            <Link to="/resources" className="btn btn-primary">Browse Resources</Link>
-            <Link to="/resources/add" className="btn btn-secondary">Add New Resource</Link>
+            <Link to="/resources" className="btn btn-primary">
+              <span className="btn-icon">📚</span>
+              Browse Resources
+            </Link>
+            <Link to="/resources/add" className="btn btn-secondary">
+              <span className="btn-icon">➕</span>
+              Add New Resource
+            </Link>
+          </div>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <span className="hero-stat-number">5+</span>
+              <span className="hero-stat-label">Resource Types</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-number">24/7</span>
+              <span className="hero-stat-label">Access</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-number">100%</span>
+              <span className="hero-stat-label">Reliable</span>
+            </div>
           </div>
         </div>
         <div className="hero-illustration">
-          <div className="illustration-card">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
+          <div className="floating-cards">
+            <div className="card card-1">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              </svg>
+            </div>
+            <div className="card card-2">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              </svg>
+            </div>
+            <div className="card card-3">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
       <section className="stats-section">
+        <div className="section-header">
+          <h2 className="section-title">Resource Overview</h2>
+          <p className="section-subtitle">Real-time campus resource statistics</p>
+        </div>
         <div className="stats-grid">
-          <div className="stat-card stat-total">
+          <div className={`stat-card stat-total ${animateStats ? 'animate' : ''}`}>
             <div className="stat-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -64,7 +146,7 @@ function HomePage() {
               <span className="stat-label">Total Resources</span>
             </div>
           </div>
-          <div className="stat-card stat-working">
+          <div className={`stat-card stat-working ${animateStats ? 'animate' : ''}`}>
             <div className="stat-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -76,7 +158,7 @@ function HomePage() {
               <span className="stat-label">Working</span>
             </div>
           </div>
-          <div className="stat-card stat-oos">
+          <div className={`stat-card stat-oos ${animateStats ? 'animate' : ''}`}>
             <div className="stat-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -94,19 +176,21 @@ function HomePage() {
 
       {/* Features Section */}
       <section className="features-section">
-        <h2 className="section-title">What You Can Manage</h2>
+        <div className="section-header">
+          <h2 className="section-title">Manage Your Campus Resources</h2>
+          <p className="section-subtitle">Comprehensive resource management for modern universities</p>
+        </div>
         <div className="features-grid">
-          {[
-            { icon: '🏛️', title: 'Lecture Halls', desc: 'Large teaching spaces with seating capacity management' },
-            { icon: '💻', title: 'Computer Labs', desc: 'Technology-equipped rooms for practical sessions' },
-            { icon: '🤝', title: 'Meeting Rooms', desc: 'Small collaborative spaces for group work' },
-            { icon: '📽️', title: 'Projectors', desc: 'Portable and fixed projection equipment' },
-            { icon: '📷', title: 'Cameras', desc: 'Recording and surveillance equipment inventory' },
-          ].map((f) => (
-            <div key={f.title} className="feature-card">
-              <span className="feature-icon">{f.icon}</span>
-              <h3 className="feature-title">{f.title}</h3>
-              <p className="feature-desc">{f.desc}</p>
+          {features.map((feature, index) => (
+            <div key={feature.title} className="feature-card" style={{ '--delay': index * 0.1 + 's' }}>
+              <div className="feature-icon-wrapper" style={{ backgroundColor: feature.color + '20' }}>
+                <span className="feature-icon" style={{ color: feature.color }}>{feature.icon}</span>
+              </div>
+              <h3 className="feature-title">{feature.title}</h3>
+              <p className="feature-desc">{feature.desc}</p>
+              <Link to="/resources" className="feature-link">
+                Learn more →
+              </Link>
             </div>
           ))}
         </div>
@@ -115,11 +199,25 @@ function HomePage() {
       {/* CTA Section */}
       <section className="cta-section">
         <div className="cta-content">
-          <h2>Ready to manage your campus resources?</h2>
-          <p>Browse all available resources or add a new one to get started.</p>
-          <Link to="/resources" className="btn btn-primary btn-large">
-            View All Resources →
-          </Link>
+          <div className="cta-illustration">
+            <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div className="cta-text">
+            <h2>Ready to optimize your campus?</h2>
+            <p>Start managing your university resources efficiently with Smart Campus.</p>
+            <div className="cta-actions">
+              <Link to="/resources" className="btn btn-primary btn-large">
+                View All Resources
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                  <polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>
