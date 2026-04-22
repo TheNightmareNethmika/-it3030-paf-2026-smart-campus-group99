@@ -1352,48 +1352,6 @@ export default function AdminPage() {
                 </div>
 
                 <div className="section">
-                  <div className="section-title">Status Control</div>
-                  <div className="status-actions">
-                    {selectedIssue.status === "OPEN" && (
-                      <button
-                        className="status-action-btn"
-                        disabled={!selectedIssue.assignedTechnicianEmail}
-                        onClick={() =>
-                          handleStatusChange(selectedIssue.id, "IN PROGRESS")
-                        }
-                      >
-                        Move to IN PROGRESS
-                      </button>
-                    )}
-
-                    {selectedIssue.status === "IN PROGRESS" && (
-                      <button
-                        className="status-action-btn"
-                        onClick={() =>
-                          handleStatusChange(selectedIssue.id, "RESOLVED")
-                        }
-                      >
-                        Move to RESOLVED
-                      </button>
-                    )}
-
-                    {selectedIssue.status === "RESOLVED" && (
-                      <button className="danger-btn" onClick={handleDeleteResolved}>
-                        Remove from Admin Queue
-                      </button>
-                    )}
-                  </div>
-
-                  {selectedIssue.status === "OPEN" &&
-                    !selectedIssue.assignedTechnicianEmail && (
-                      <div className="empty-note" style={{ marginTop: "10px" }}>
-                        Assign a technician first before moving this issue to IN
-                        PROGRESS.
-                      </div>
-                    )}
-                </div>
-
-                <div className="section">
                   <div className="section-title">Issue Summary</div>
                   <div className="two-grid">
                     <div className="info-card">
@@ -1435,6 +1393,48 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div className="section">
+                  <div className="section-title">Status Control</div>
+                  <div className="status-actions">
+                    {selectedIssue.status === "OPEN" && (
+                      <button
+                        className="status-action-btn"
+                        disabled={!selectedIssue.assignedTechnicianEmail}
+                        onClick={() =>
+                          handleStatusChange(selectedIssue.id, "IN PROGRESS")
+                        }
+                      >
+                        Move to IN PROGRESS
+                      </button>
+                    )}
+
+                    {selectedIssue.status === "IN PROGRESS" && (
+                      <button
+                        className="status-action-btn"
+                        onClick={() =>
+                          handleStatusChange(selectedIssue.id, "RESOLVED")
+                        }
+                      >
+                        Move to RESOLVED
+                      </button>
+                    )}
+
+                    {selectedIssue.status === "RESOLVED" && (
+                      <button className="danger-btn" onClick={handleDeleteResolved}>
+                        Remove from Admin Queue
+                      </button>
+                    )}
+                  </div>
+
+                  {selectedIssue.status === "OPEN" &&
+                    !selectedIssue.assignedTechnicianEmail && (
+                      <div className="empty-note" style={{ marginTop: "10px" }}>
+                        Assign a technician first before moving this issue to IN
+                        PROGRESS.
+                      </div>
+                    )}
                 </div>
 
                 {selectedIssue.status === "OPEN" && (
