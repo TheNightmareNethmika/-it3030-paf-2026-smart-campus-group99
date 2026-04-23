@@ -151,6 +151,10 @@ function BookingPage() {
         expectedAttendees: "",
         agree: false,
       });
+
+      setTimeout(() => {
+        navigate("/my-bookings");
+      }, 1200);
     } catch (error) {
       if (error.response?.data?.message) {
         setApiError(error.response.data.message);
@@ -168,20 +172,21 @@ function BookingPage() {
   const inputStyle = {
     width: "100%",
     padding: "14px 16px",
-    borderRadius: "12px",
-    border: "1px solid #d1d5db",
+    borderRadius: "14px",
+    border: "1px solid #dbe3ee",
     fontSize: "16px",
     boxSizing: "border-box",
-    backgroundColor: "#3a3a3d",
-    color: "#ffffff",
+    backgroundColor: "#f8fafc",
+    color: "#111827",
     outline: "none",
+    boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)",
   };
 
   const labelStyle = {
     display: "block",
     marginBottom: "8px",
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: "700",
+    color: "#0f172a",
     fontSize: "15px",
   };
 
@@ -189,43 +194,92 @@ function BookingPage() {
     color: "#dc2626",
     fontSize: "13px",
     marginTop: "6px",
+    fontWeight: "500",
   };
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#eef0f3",
-        padding: "30px 15px",
+        background: "linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%)",
+        padding: "36px 16px",
       }}
     >
       <div
         style={{
-          maxWidth: "620px",
+          maxWidth: "760px",
           margin: "0 auto",
           backgroundColor: "#ffffff",
-          borderRadius: "18px",
-          padding: "28px",
-          boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
+          borderRadius: "28px",
+          padding: "34px",
+          boxShadow: "0 18px 40px rgba(15, 23, 42, 0.10)",
+          border: "1px solid #edf2f7",
         }}
       >
-        <h1 style={{ marginTop: 0, marginBottom: "18px" }}>Book Resource</h1>
+        <div style={{ marginBottom: "24px" }}>
+          <h1
+            style={{
+              marginTop: 0,
+              marginBottom: "10px",
+              fontSize: "42px",
+              color: "#0f172a",
+              lineHeight: "1.1",
+            }}
+          >
+            Book Resource
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              color: "#64748b",
+              fontSize: "17px",
+            }}
+          >
+            Fill out the booking form and confirm your request.
+          </p>
+        </div>
 
         {selectedResource ? (
           <div
             style={{
-              backgroundColor: "#eff6ff",
+              background: "linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%)",
               border: "1px solid #bfdbfe",
-              padding: "14px",
-              borderRadius: "10px",
-              marginBottom: "20px",
+              padding: "18px",
+              borderRadius: "18px",
+              marginBottom: "22px",
+              boxShadow: "0 6px 16px rgba(37, 99, 235, 0.08)",
             }}
           >
-            <p style={{ margin: 0 }}>
-              <strong>Selected Resource:</strong> {selectedResource.name}
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "700",
+                color: "#2563eb",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.4px",
+              }}
+            >
+              Selected Resource
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "#0f172a",
+              }}
+            >
+              {selectedResource.name}
             </p>
-            <p style={{ margin: "6px 0 0 0" }}>
-              <strong>Type:</strong> {selectedResource.type}
+            <p
+              style={{
+                margin: "8px 0 0 0",
+                color: "#475569",
+                fontSize: "16px",
+              }}
+            >
+              Type: <strong>{selectedResource.type}</strong>
             </p>
           </div>
         ) : null}
@@ -233,11 +287,13 @@ function BookingPage() {
         {successMessage && (
           <div
             style={{
-              backgroundColor: "#e8f8ee",
+              backgroundColor: "#ecfdf5",
               color: "#166534",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "16px",
               marginBottom: "18px",
+              border: "1px solid #bbf7d0",
+              boxShadow: "0 4px 10px rgba(22, 101, 52, 0.08)",
             }}
           >
             {successMessage}
@@ -249,9 +305,11 @@ function BookingPage() {
             style={{
               backgroundColor: "#fef2f2",
               color: "#b91c1c",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "16px",
               marginBottom: "18px",
+              border: "1px solid #fecaca",
+              boxShadow: "0 4px 10px rgba(185, 28, 28, 0.08)",
             }}
           >
             {apiError}
@@ -259,7 +317,7 @@ function BookingPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "22px" }}>
             <label style={labelStyle}>Resource ID</label>
             <input
               type="text"
@@ -267,14 +325,15 @@ function BookingPage() {
               readOnly
               style={{
                 ...inputStyle,
-                backgroundColor: "#d4d4d4",
-                color: "#6b7280",
+                backgroundColor: "#f1f5f9",
+                color: "#64748b",
+                fontWeight: "600",
               }}
             />
             {errors.resourceId && <div style={errorStyle}>{errors.resourceId}</div>}
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "22px" }}>
             <label style={labelStyle}>Booking Date</label>
             <input
               type="date"
@@ -287,32 +346,41 @@ function BookingPage() {
             {errors.bookingDate && <div style={errorStyle}>{errors.bookingDate}</div>}
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={labelStyle}>Start Time</label>
-            <input
-              type="time"
-              name="startTime"
-              min={formData.bookingDate === today ? currentTime : ""}
-              value={formData.startTime}
-              onChange={handleChange}
-              style={inputStyle}
-            />
-            {errors.startTime && <div style={errorStyle}>{errors.startTime}</div>}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+              marginBottom: "22px",
+            }}
+          >
+            <div>
+              <label style={labelStyle}>Start Time</label>
+              <input
+                type="time"
+                name="startTime"
+                min={formData.bookingDate === today ? currentTime : ""}
+                value={formData.startTime}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+              {errors.startTime && <div style={errorStyle}>{errors.startTime}</div>}
+            </div>
+
+            <div>
+              <label style={labelStyle}>End Time</label>
+              <input
+                type="time"
+                name="endTime"
+                value={formData.endTime}
+                onChange={handleChange}
+                style={inputStyle}
+              />
+              {errors.endTime && <div style={errorStyle}>{errors.endTime}</div>}
+            </div>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={labelStyle}>End Time</label>
-            <input
-              type="time"
-              name="endTime"
-              value={formData.endTime}
-              onChange={handleChange}
-              style={inputStyle}
-            />
-            {errors.endTime && <div style={errorStyle}>{errors.endTime}</div>}
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "22px" }}>
             <label style={labelStyle}>Attendees</label>
             <input
               type="number"
@@ -320,6 +388,7 @@ function BookingPage() {
               min="1"
               value={formData.expectedAttendees}
               onChange={handleChange}
+              placeholder="Enter expected attendees"
               style={inputStyle}
             />
             {errors.expectedAttendees && (
@@ -327,7 +396,7 @@ function BookingPage() {
             )}
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "22px" }}>
             <label style={labelStyle}>Purpose</label>
             <input
               type="text"
@@ -340,18 +409,44 @@ function BookingPage() {
             {errors.purpose && <div style={errorStyle}>{errors.purpose}</div>}
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+          <div
+            style={{
+              marginBottom: "24px",
+              backgroundColor: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "16px",
+              padding: "16px",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                cursor: "pointer",
+              }}
+            >
               <input
                 type="checkbox"
                 name="agree"
                 checked={formData.agree}
                 onChange={handleChange}
-                style={{ marginTop: "4px" }}
+                style={{
+                  marginTop: "4px",
+                  width: "18px",
+                  height: "18px",
+                  accentColor: "#2563eb",
+                }}
               />
-              <span style={{ color: "#4b5563", lineHeight: "1.5" }}>
+              <span
+                style={{
+                  color: "#475569",
+                  lineHeight: "1.6",
+                  fontSize: "15px",
+                }}
+              >
                 I confirm these details are accurate and agree to the
-                <span style={{ color: "#2563eb" }}> cancellation policy</span>.
+                <span style={{ color: "#2563eb", fontWeight: "600" }}> cancellation policy</span>.
               </span>
             </label>
             {errors.agree && <div style={errorStyle}>{errors.agree}</div>}
@@ -362,15 +457,18 @@ function BookingPage() {
             disabled={loading || !selectedResource}
             style={{
               width: "100%",
-              padding: "15px",
-              backgroundColor: loading || !selectedResource ? "#93c5fd" : "#2563eb",
+              padding: "16px",
+              background: loading || !selectedResource
+                ? "#93c5fd"
+                : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
               color: "#ffffff",
               border: "none",
-              borderRadius: "12px",
+              borderRadius: "16px",
               fontSize: "18px",
               fontWeight: "700",
               cursor: loading || !selectedResource ? "not-allowed" : "pointer",
               marginBottom: "12px",
+              boxShadow: "0 10px 20px rgba(37, 99, 235, 0.22)",
             }}
           >
             {loading ? "Confirming..." : "Confirm Booking"}
@@ -383,10 +481,10 @@ function BookingPage() {
               width: "100%",
               padding: "15px",
               backgroundColor: "#ffffff",
-              color: "#374151",
-              border: "1px solid #d1d5db",
-              borderRadius: "12px",
-              fontSize: "18px",
+              color: "#334155",
+              border: "1px solid #dbe3ee",
+              borderRadius: "16px",
+              fontSize: "17px",
               fontWeight: "600",
               cursor: "pointer",
             }}
