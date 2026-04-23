@@ -5,6 +5,8 @@ import MyReportsPage from "./pages/MyReportsPage";
 import IssueDetailPage from "./pages/IssueDetailPage";
 import FeaturedPage from "./pages/FeaturedPage";
 import AdminPage from "./pages/AdminPage";
+import ResourcesPage from "./pages/ResourcesPage";
+
 
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
       <Route path="/issues/:id" element={<IssueDetailPage />} />
       <Route path="/featured" element={<FeaturedPage />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/resources" element={<ResourcesPage />} />
+     
     </Routes>
   );
 }
