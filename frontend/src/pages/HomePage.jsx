@@ -69,9 +69,13 @@ function HomePage() {
         <div className="hero-bg">
           <div className="hero-pattern"></div>
           <div className="hero-gradient"></div>
+          <div className="hero-particles"></div>
         </div>
         <div className="hero-content">
-          <div className="hero-badge">🎓 University Management System</div>
+          <div className="hero-badge">
+            <span className="badge-icon">🎓</span>
+            <span>University Management System</span>
+          </div>
           <h1 className="hero-title">
             Smart Campus
             <span className="hero-accent"> Resource Portal</span>
@@ -83,25 +87,57 @@ function HomePage() {
             and keep your campus running efficiently.
           </p>
           <div className="hero-actions">
-            <Link to="/resources" className="btn btn-primary">
-              <span className="btn-icon">📚</span>
+            <Link to="/resources" className="btn btn-primary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="9" x2="15" y2="9"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
               Browse Resources
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
             </Link>
-            <Link to="/resources/add" className="btn btn-secondary">
-              <span className="btn-icon">➕</span>
+            <Link to="/resources/add" className="btn btn-secondary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
               Add New Resource
             </Link>
           </div>
           <div className="hero-stats">
             <div className="hero-stat">
+              <div className="stat-icon-wrapper">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+              </div>
               <span className="hero-stat-number">5+</span>
               <span className="hero-stat-label">Resource Types</span>
             </div>
             <div className="hero-stat">
+              <div className="stat-icon-wrapper">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
               <span className="hero-stat-number">24/7</span>
               <span className="hero-stat-label">Access</span>
             </div>
             <div className="hero-stat">
+              <div className="stat-icon-wrapper">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
               <span className="hero-stat-number">100%</span>
               <span className="hero-stat-label">Reliable</span>
             </div>
@@ -110,19 +146,28 @@ function HomePage() {
         <div className="hero-illustration">
           <div className="floating-cards">
             <div className="card card-1">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              </svg>
+              <div className="card-content">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
+                <span>Lecture Hall</span>
+              </div>
             </div>
             <div className="card card-2">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-              </svg>
+              <div className="card-content">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                </svg>
+                <span>Computer Lab</span>
+              </div>
             </div>
             <div className="card card-3">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
+              <div className="card-content">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span>Meeting Room</span>
+              </div>
             </div>
           </div>
         </div>

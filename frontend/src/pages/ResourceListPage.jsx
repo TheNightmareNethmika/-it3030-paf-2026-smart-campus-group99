@@ -86,10 +86,14 @@ function ResourceListPage() {
     if (filters.minCapacity) params.minCapacity = filters.minCapacity
 
     resourceApi.getAll(params)
-      .then((res) => setResources(res.data))
-      .catch(() =>
+      .then((res) => {
+        console.log('API Response:', res)
+        setResources(res.data || res)
+      })
+      .catch((error) => {
+        console.error('API Error:', error)
         setError('Failed to load resources. Make sure backend is running.')
-      )
+      })
       .finally(() => setLoading(false))
   }, [filters, validateFilters])
 
