@@ -6,6 +6,8 @@ import IssueDetailPage from "./pages/IssueDetailPage";
 import FeaturedPage from "./pages/FeaturedPage";
 import AdminPage from "./pages/AdminPage";
 import ResourcesPage from "./pages/ResourcesPage";
+import BookingPage from "./pages/BookingPage";
+
 
 
 
@@ -19,6 +21,7 @@ function App() {
       <Route path="/featured" element={<FeaturedPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/resources" element={<ResourcesPage />} />
+      <Route path="/booking" element={<BookingPage />} /> 
      
     </Routes>
   );
