@@ -107,6 +107,26 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public IssueResponse unassignTechnician(Long issueId) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        if (!"OPEN".equalsIgnoreCase(issue.getStatus())) {
+            throw new IllegalArgumentException("Technician assignment can be cancelled only while the issue is OPEN.");
+        }
+
+        issue.setAssignedTechnicianName(null);
+        issue.setAssignedTechnicianEmail(null);
+        issue.setAssignedTeam(null);
+        issue.setAssignedAt(null);
+        issue.setTechnicianStatus(null);
+
+        issueRepository.save(issue);
+
+        return mapToIssueResponse(issue);
+    }
+
+    @Override
     public IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId, String visibility) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));

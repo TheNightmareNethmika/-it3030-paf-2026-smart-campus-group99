@@ -7,6 +7,7 @@ import {
   getAdminIssues,
   getAdminSummary,
   getTechnicians,
+  unassignIssueTechnician,
   updateAdminComment,
   updateAdminIssueStatus,
 } from "../api/adminApi";
@@ -290,6 +291,20 @@ export default function AdminPage() {
     } catch (err) {
       console.error(err);
       alert("Failed to assign technician.");
+    }
+  };
+
+  const handleUnassignTechnician = async (issueId) => {
+    try {
+      await unassignIssueTechnician(issueId);
+      await loadAdminData();
+      setSelectedIssueId(issueId);
+    } catch (err) {
+      console.error(err);
+      alert(
+        err?.response?.data?.message ||
+          "Failed to cancel technician assignment."
+      );
     }
   };
 
@@ -1215,6 +1230,23 @@ export default function AdminPage() {
           opacity: 0.95;
         }
 
+        .assign-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        .assign-actions .assign-btn,
+        .assign-actions .danger-btn {
+          flex: 1;
+          margin-top: 0;
+        }
+
+        .assign-btn:disabled {
+          opacity: 0.8;
+          cursor: default;
+        }
+
         .conversation-list {
           display: flex;
           flex-direction: column;
@@ -1683,14 +1715,28 @@ export default function AdminPage() {
                               <div className="tech-phone">{tech.phone}</div>
                               <div className="tech-phone">Status: {tech.status}</div>
 
-                              <button
-                                className="assign-btn"
-                                onClick={() =>
-                                  handleAssignTechnician(selectedIssue.id, tech.id)
-                                }
-                              >
-                                {assigned ? "Assigned ✓" : "Assign Technician"}
-                              </button>
+                              <div className={assigned ? "assign-actions" : undefined}>
+                                <button
+                                  className="assign-btn"
+                                  disabled={assigned}
+                                  onClick={() =>
+                                    handleAssignTechnician(selectedIssue.id, tech.id)
+                                  }
+                                >
+                                  {assigned ? "Assigned ✓" : "Assign Technician"}
+                                </button>
+                                {assigned && (
+                                  <button
+                                    className="danger-btn"
+                                    type="button"
+                                    onClick={() =>
+                                      handleUnassignTechnician(selectedIssue.id)
+                                    }
+                                  >
+                                    Cancel Assign
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           );
                         })

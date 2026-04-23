@@ -16,6 +16,8 @@ public interface AdminService {
 
     IssueResponse assignTechnician(Long issueId, Long technicianId);
 
+    IssueResponse unassignTechnician(Long issueId);
+
     IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId, String visibility);
 
     IssueResponse updateAdminComment(Long issueId, Long commentId, String text);

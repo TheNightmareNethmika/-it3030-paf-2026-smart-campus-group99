@@ -50,6 +50,11 @@ public class AdminController {
         return adminService.assignTechnician(issueId, request.getTechnicianId());
     }
 
+    @PatchMapping("/issues/{issueId}/unassign")
+    public IssueResponse unassignTechnician(@PathVariable Long issueId) {
+        return adminService.unassignTechnician(issueId);
+    }
+
     @PostMapping("/issues/{issueId}/comments")
     public IssueResponse addAdminComment(@PathVariable Long issueId,
                                          @RequestBody CommentRequest request) {
