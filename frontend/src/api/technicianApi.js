@@ -14,3 +14,6 @@ export const updateTechnicianComment = (issueId, commentId, text) =>
 
 export const deleteTechnicianComment = (issueId, commentId) =>
   api.delete(`/technician/issues/${issueId}/comments/${commentId}`);
+
+export const deleteResolvedTechnicianIssue = (issueId) =>
+  api.delete(`/technician/issues/${issueId}`);

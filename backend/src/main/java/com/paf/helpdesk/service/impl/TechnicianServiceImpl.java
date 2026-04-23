@@ -157,6 +157,21 @@ public class TechnicianServiceImpl implements TechnicianService {
         commentRepository.delete(comment);
     }
 
+    @Override
+    public void deleteResolvedIssue(Long issueId) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+
+        ensureIssueAssigned(issue);
+
+        if (!"RESOLVED".equalsIgnoreCase(issue.getTechnicianStatus())) {
+            throw new IllegalArgumentException("Only resolved technician issues can be removed.");
+        }
+
+        issue.setTechnicianStatus(null);
+        issueRepository.save(issue);
+    }
+
     private List<Issue> getAssignedIssues() {
         return issueRepository.findByTechnicianStatusIsNotNullOrderByAssignedAtDesc()
                 .stream()

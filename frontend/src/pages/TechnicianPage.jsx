@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
   addTechnicianComment,
+  deleteResolvedTechnicianIssue,
   deleteTechnicianComment,
   getTechnicianIssues,
   getTechnicianSummary,
@@ -23,6 +24,13 @@ const saveReadCommentIds = (key, ids) => {
   window.localStorage.setItem(key, JSON.stringify(ids));
 };
 
+const loadStoredTab = (key, fallback, allowedValues) => {
+  if (typeof window === "undefined") return fallback;
+
+  const savedValue = window.localStorage.getItem(key);
+  return allowedValues.includes(savedValue) ? savedValue : fallback;
+};
+
 function issueMatchesStatus(issue, status) {
   return issue.technicianStatus === status;
 }
@@ -35,7 +43,13 @@ export default function TechnicianPage() {
   const [issues, setIssues] = useState([]);
   const [summary, setSummary] = useState({});
   const [selectedIssueId, setSelectedIssueId] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("ASSIGNED");
+  const [statusFilter, setStatusFilter] = useState(() =>
+    loadStoredTab("helpdesk-technician-status-filter", "ASSIGNED", [
+      "ASSIGNED",
+      "IN PROGRESS",
+      "RESOLVED",
+    ])
+  );
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [technicianNote, setTechnicianNote] = useState("");
@@ -54,6 +68,11 @@ export default function TechnicianPage() {
   useEffect(() => {
     loadTechnicianData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("helpdesk-technician-status-filter", statusFilter);
+  }, [statusFilter]);
 
   const loadTechnicianData = async () => {
     try {
@@ -341,6 +360,25 @@ export default function TechnicianPage() {
     } catch (err) {
       console.error(err);
       alert("Failed to delete technician comment.");
+    }
+  };
+
+  const handleDeleteResolvedIssue = async () => {
+    if (!selectedIssue) return;
+    const confirmed = window.confirm(
+      "Remove this resolved issue from the technician queue?"
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteResolvedTechnicianIssue(selectedIssue.id);
+      await loadTechnicianData();
+    } catch (err) {
+      console.error(err);
+      alert(
+        err?.response?.data?.message ||
+          "Failed to remove resolved issue from technician queue."
+      );
     }
   };
 
@@ -1354,38 +1392,43 @@ export default function TechnicianPage() {
                   </div>
                 </div>
 
-                <div className="section">
-                  <div className="section-title">Status Control</div>
-                  <div className="status-actions">
-                    {selectedIssue.technicianStatus === "ASSIGNED" && (
-                      <button
-                        className="status-action-btn"
-                        onClick={() =>
-                          handleStatusChange(selectedIssue.id, "IN PROGRESS")
-                        }
-                      >
-                        Start Working
-                      </button>
-                    )}
+                {selectedIssue.technicianStatus !== "RESOLVED" ? (
+                  <div className="section">
+                    <div className="section-title">Status Control</div>
+                    <div className="status-actions">
+                      {selectedIssue.technicianStatus === "ASSIGNED" && (
+                        <button
+                          className="status-action-btn"
+                          onClick={() =>
+                            handleStatusChange(selectedIssue.id, "IN PROGRESS")
+                          }
+                        >
+                          Start Working
+                        </button>
+                      )}
 
-                    {selectedIssue.technicianStatus === "IN PROGRESS" && (
-                      <button
-                        className="status-action-btn"
-                        onClick={() =>
-                          handleStatusChange(selectedIssue.id, "RESOLVED")
-                        }
-                      >
-                        Mark as Resolved
-                      </button>
-                    )}
-
-                    {selectedIssue.technicianStatus === "RESOLVED" && (
-                      <div className="status-action-btn" style={{ opacity: 0.7 }}>
-                        Issue Resolved ✓
-                      </div>
-                    )}
+                      {selectedIssue.technicianStatus === "IN PROGRESS" && (
+                        <button
+                          className="status-action-btn"
+                          onClick={() =>
+                            handleStatusChange(selectedIssue.id, "RESOLVED")
+                          }
+                        >
+                          Mark as Resolved
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="section">
+                    <div className="section-title">Resolved Action</div>
+                    <div className="status-actions">
+                      <button className="danger-btn" onClick={handleDeleteResolvedIssue}>
+                        Remove from Technician Queue
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {["ASSIGNED", "IN PROGRESS"].includes(selectedIssue.technicianStatus) && (
                   <div className="section">

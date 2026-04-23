@@ -27,12 +27,25 @@ const saveReadCommentIds = (key, ids) => {
   window.localStorage.setItem(key, JSON.stringify(ids));
 };
 
+const loadStoredTab = (key, fallback, allowedValues) => {
+  if (typeof window === "undefined") return fallback;
+
+  const savedValue = window.localStorage.getItem(key);
+  return allowedValues.includes(savedValue) ? savedValue : fallback;
+};
+
 export default function AdminPage() {
   const [issues, setIssues] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [summary, setSummary] = useState({});
   const [selectedIssueId, setSelectedIssueId] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("OPEN");
+  const [statusFilter, setStatusFilter] = useState(() =>
+    loadStoredTab("helpdesk-admin-status-filter", "OPEN", [
+      "OPEN",
+      "IN PROGRESS",
+      "RESOLVED",
+    ])
+  );
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [adminNote, setAdminNote] = useState("");
@@ -54,6 +67,11 @@ export default function AdminPage() {
   useEffect(() => {
     loadAdminData();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("helpdesk-admin-status-filter", statusFilter);
+  }, [statusFilter]);
 
   const loadAdminData = async () => {
     try {

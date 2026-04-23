@@ -60,4 +60,10 @@ public class TechnicianController {
         technicianService.deleteComment(issueId, commentId);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/issues/{issueId}")
+    public ResponseEntity<Void> deleteResolvedIssue(@PathVariable Long issueId) {
+        technicianService.deleteResolvedIssue(issueId);
+        return ResponseEntity.ok().build();
+    }
 }

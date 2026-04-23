@@ -19,4 +19,6 @@ public interface TechnicianService {
     void updateComment(Long issueId, Long commentId, String text);
 
     void deleteComment(Long issueId, Long commentId);
+
+    void deleteResolvedIssue(Long issueId);
 }
