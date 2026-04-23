@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
 function MyBookingsPage() {
-  const navigate = useNavigate();
   const API_BASE = "http://localhost:8081/api";
 
   const [bookings, setBookings] = useState([]);
@@ -15,6 +13,10 @@ function MyBookingsPage() {
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [editBookingId, setEditBookingId] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("");
 
   const [editForm, setEditForm] = useState({
     bookingDate: "",
@@ -247,9 +249,33 @@ function MyBookingsPage() {
     }
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("ALL");
+    setDateFilter("");
+  };
+
+  const filteredBookings = useMemo(() => {
+    return bookings.filter((booking) => {
+      const matchesSearch =
+        booking.id.toString().includes(searchTerm.toLowerCase()) ||
+        booking.resourceId.toString().includes(searchTerm.toLowerCase()) ||
+        booking.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.status.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "ALL" ? true : booking.status === statusFilter;
+
+      const matchesDate =
+        dateFilter === "" ? true : booking.bookingDate === dateFilter;
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [bookings, searchTerm, statusFilter, dateFilter]);
+
   const detailBoxStyle = {
     backgroundColor: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "14px",
     padding: "16px",
     border: "1px solid #e5e7eb",
   };
@@ -273,6 +299,7 @@ function MyBookingsPage() {
     border: "1px solid #d1d5db",
     fontSize: "14px",
     boxSizing: "border-box",
+    backgroundColor: "#fff",
   };
 
   const fieldErrorStyle = {
@@ -281,51 +308,127 @@ function MyBookingsPage() {
     marginTop: "6px",
   };
 
+  const filterInputStyle = {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    border: "1px solid #d1d5db",
+    fontSize: "14px",
+    boxSizing: "border-box",
+    backgroundColor: "#fff",
+    outline: "none",
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#eef0f3",
-        padding: "30px 15px",
+        background: "linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%)",
+        padding: "32px 16px",
       }}
     >
       <div
         style={{
-          maxWidth: "1200px",
+          maxWidth: "1250px",
           margin: "0 auto",
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "12px",
-            flexWrap: "wrap",
-            marginBottom: "20px",
+            backgroundColor: "#ffffff",
+            borderRadius: "24px",
+            padding: "28px",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+            marginBottom: "22px",
           }}
         >
-          <div>
-            <h1 style={{ margin: 0 }}>My Bookings</h1>
-            <p style={{ marginTop: "8px", color: "#555" }}>
-              Manage your booking requests using your backend actions.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate("/")}
+          <div
             style={{
-              padding: "10px 16px",
-              backgroundColor: "#111827",
-              color: "#fff",
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: "600",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "16px",
+              flexWrap: "wrap",
+              marginBottom: "20px",
             }}
           >
-            Back to Resources
-          </button>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "34px",
+                  color: "#0f172a",
+                }}
+              >
+                My Bookings
+              </h1>
+             
+            </div>
+
+            <div
+              style={{
+                padding: "12px 16px",
+                backgroundColor: "#eff6ff",
+                color: "#1d4ed8",
+                borderRadius: "14px",
+                fontWeight: "700",
+                minWidth: "120px",
+                textAlign: "center",
+              }}
+            >
+              Total: {filteredBookings.length}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr 1fr auto",
+              gap: "14px",
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Search by booking ID, resource ID, purpose, or status"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={filterInputStyle}
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={filterInputStyle}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              style={filterInputStyle}
+            />
+
+            <button
+              onClick={clearFilters}
+              style={{
+                padding: "12px 18px",
+                backgroundColor: "#111827",
+                color: "#fff",
+                border: "none",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
         {successMessage && (
@@ -333,9 +436,10 @@ function MyBookingsPage() {
             style={{
               backgroundColor: "#e8f8ee",
               color: "#166534",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
               marginBottom: "18px",
+              boxShadow: "0 4px 10px rgba(22, 101, 52, 0.08)",
             }}
           >
             {successMessage}
@@ -347,9 +451,10 @@ function MyBookingsPage() {
             style={{
               backgroundColor: "#fef2f2",
               color: "#b91c1c",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
               marginBottom: "18px",
+              boxShadow: "0 4px 10px rgba(185, 28, 28, 0.08)",
             }}
           >
             {actionError}
@@ -360,8 +465,9 @@ function MyBookingsPage() {
           <div
             style={{
               backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "16px",
+              padding: "24px",
+              borderRadius: "20px",
+              boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
             }}
           >
             Loading bookings...
@@ -371,26 +477,28 @@ function MyBookingsPage() {
             style={{
               backgroundColor: "#fef2f2",
               color: "#b91c1c",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
             }}
           >
             {pageError}
           </div>
-        ) : bookings.length === 0 ? (
+        ) : filteredBookings.length === 0 ? (
           <div
             style={{
               backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "16px",
-              color: "#666",
+              padding: "28px",
+              borderRadius: "20px",
+              color: "#64748b",
+              textAlign: "center",
+              boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
             }}
           >
-            No bookings found.
+            No matching bookings found.
           </div>
         ) : (
           <div style={{ display: "grid", gap: "24px" }}>
-            {bookings.map((booking) => {
+            {filteredBookings.map((booking) => {
               const statusStyles = getStatusStyles(booking.status);
 
               return (
@@ -398,16 +506,17 @@ function MyBookingsPage() {
                   key={booking.id}
                   style={{
                     backgroundColor: "#ffffff",
-                    borderRadius: "18px",
-                    padding: "24px",
-                    boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
+                    borderRadius: "24px",
+                    padding: "26px",
+                    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)",
+                    border: "1px solid #eef2f7",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      gap: "16px",
+                      gap: "18px",
                       flexWrap: "wrap",
                       marginBottom: "24px",
                     }}
@@ -421,7 +530,16 @@ function MyBookingsPage() {
                           flexWrap: "wrap",
                         }}
                       >
-                        <h2 style={{ margin: 0 }}>Booking #{booking.id}</h2>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "30px",
+                            color: "#0f172a",
+                          }}
+                        >
+                          Booking #{booking.id}
+                        </h2>
+
                         <span
                           style={{
                             padding: "8px 14px",
@@ -435,7 +553,13 @@ function MyBookingsPage() {
                         </span>
                       </div>
 
-                      <p style={{ color: "#6b7280", marginTop: "10px" }}>
+                      <p
+                        style={{
+                          color: "#64748b",
+                          marginTop: "10px",
+                          fontSize: "16px",
+                        }}
+                      >
                         Resource ID: #{booking.resourceId}
                       </p>
                     </div>
@@ -453,13 +577,14 @@ function MyBookingsPage() {
                           <button
                             onClick={() => startEdit(booking)}
                             style={{
-                              padding: "10px 16px",
+                              padding: "11px 16px",
                               backgroundColor: "#2563eb",
                               color: "#fff",
                               border: "none",
-                              borderRadius: "10px",
+                              borderRadius: "12px",
                               cursor: "pointer",
                               fontWeight: "600",
+                              boxShadow: "0 6px 14px rgba(37, 99, 235, 0.25)",
                             }}
                           >
                             Edit Booking
@@ -469,14 +594,15 @@ function MyBookingsPage() {
                             onClick={() => handleDeleteBooking(booking.id)}
                             disabled={deleteLoadingId === booking.id}
                             style={{
-                              padding: "10px 16px",
-                              backgroundColor: "#b91c1c",
+                              padding: "11px 16px",
+                              backgroundColor: "#dc2626",
                               color: "#fff",
                               border: "none",
-                              borderRadius: "10px",
+                              borderRadius: "12px",
                               cursor:
                                 deleteLoadingId === booking.id ? "not-allowed" : "pointer",
                               fontWeight: "600",
+                              boxShadow: "0 6px 14px rgba(220, 38, 38, 0.22)",
                             }}
                           >
                             {deleteLoadingId === booking.id
@@ -491,14 +617,15 @@ function MyBookingsPage() {
                           onClick={() => handleCancelBooking(booking.id)}
                           disabled={cancelLoadingId === booking.id}
                           style={{
-                            padding: "10px 16px",
-                            backgroundColor: "#dc2626",
+                            padding: "11px 16px",
+                            backgroundColor: "#ea580c",
                             color: "#fff",
                             border: "none",
-                            borderRadius: "10px",
+                            borderRadius: "12px",
                             cursor:
                               cancelLoadingId === booking.id ? "not-allowed" : "pointer",
                             fontWeight: "600",
+                            boxShadow: "0 6px 14px rgba(234, 88, 12, 0.22)",
                           }}
                         >
                           {cancelLoadingId === booking.id
@@ -514,12 +641,20 @@ function MyBookingsPage() {
                       style={{
                         border: "1px solid #dbeafe",
                         backgroundColor: "#f8fbff",
-                        padding: "18px",
-                        borderRadius: "14px",
-                        marginBottom: "20px",
+                        padding: "20px",
+                        borderRadius: "18px",
+                        marginBottom: "22px",
                       }}
                     >
-                      <h3 style={{ marginTop: 0 }}>Edit Booking</h3>
+                      <h3
+                        style={{
+                          marginTop: 0,
+                          marginBottom: "16px",
+                          color: "#1e3a8a",
+                        }}
+                      >
+                        Edit Booking
+                      </h3>
 
                       <div
                         style={{
@@ -644,7 +779,15 @@ function MyBookingsPage() {
                     </div>
                   ) : null}
 
-                  <h3 style={{ marginBottom: "18px" }}>Booking Details</h3>
+                  <h3
+                    style={{
+                      marginBottom: "18px",
+                      color: "#0f172a",
+                      fontSize: "24px",
+                    }}
+                  >
+                    Booking Details
+                  </h3>
 
                   <div
                     style={{
