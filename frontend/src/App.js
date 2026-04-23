@@ -4,12 +4,10 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminResourceManagement from './pages/AdminResourceManagement';
 import AdminUserManagement from './pages/AdminUserManagement';
 import UserDashboard from './pages/UserDashboard';
 import UserResourceCatalogue from './pages/UserResourceCatalogue';
 import UserProfile from './pages/UserProfile';
-import AdminTest from './pages/AdminTest';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import AccessDenied from './pages/AccessDenied';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -29,8 +27,8 @@ function App() {
             element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} 
           />
           <Route 
-            path="/admin/resources" 
-            element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminResourceManagement /></ProtectedRoute>} 
+            path="/admin" 
+            element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} 
           />
           <Route 
             path="/admin/users" 
@@ -48,11 +46,6 @@ function App() {
             path="/profile" 
             element={<ProtectedRoute allowedRoles={['USER', 'ADMIN', 'TECHNICIAN']}><UserProfile /></ProtectedRoute>} 
           />
-          <Route 
-            path="/admin" 
-            element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminTest /></ProtectedRoute>} 
-          />
-          
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
           <Route path="/access-denied" element={<AccessDenied />} />
         </Routes>

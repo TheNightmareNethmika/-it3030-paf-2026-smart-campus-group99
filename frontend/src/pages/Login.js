@@ -33,7 +33,7 @@ const Login = () => {
                 localStorage.setItem('email', email);
                 
                 if (role === 'ADMIN') {
-                    navigate('/admin-dashboard');
+                    navigate('/admin');
                 } else if (role === 'TECHNICIAN') {
                     navigate('/user-dashboard');
                 } else {
