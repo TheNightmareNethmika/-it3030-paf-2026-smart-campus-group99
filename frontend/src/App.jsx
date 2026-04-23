@@ -8,6 +8,7 @@ import AdminPage from "./pages/AdminPage";
 import ResourcesPage from "./pages/ResourcesPage";
 import BookingPage from "./pages/BookingPage";
 import MyBookingsPage from "./pages/MyBookingsPage"; 
+import AdminBookingsPage from "./pages/AdminBookingsPage";
 
 
 
@@ -23,7 +24,7 @@ function App() {
       <Route path="/resources" element={<ResourcesPage />} />
       <Route path="/booking" element={<BookingPage />} /> 
       <Route path="/my-bookings" element={<MyBookingsPage />} />
-     
+      <Route path="/admin-bookings" element={<AdminBookingsPage />} />
     </Routes>
   );
 }
