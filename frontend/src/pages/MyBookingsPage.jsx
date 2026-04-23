@@ -28,6 +28,21 @@ function MyBookingsPage() {
 
   const [editErrors, setEditErrors] = useState({});
 
+  const today = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const currentTime = useMemo(() => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }, []);
+
   const fetchMyBookings = async () => {
     try {
       setLoading(true);
@@ -124,6 +139,8 @@ function MyBookingsPage() {
 
     if (!editForm.bookingDate) {
       errors.bookingDate = "Booking date is required";
+    } else if (editForm.bookingDate < today) {
+      errors.bookingDate = "Previous dates are not allowed";
     }
 
     if (!editForm.startTime) {
@@ -132,6 +149,14 @@ function MyBookingsPage() {
 
     if (!editForm.endTime) {
       errors.endTime = "End time is required";
+    }
+
+    if (
+      editForm.bookingDate === today &&
+      editForm.startTime &&
+      editForm.startTime < currentTime
+    ) {
+      errors.startTime = "Previous time is not allowed for today";
     }
 
     if (editForm.startTime && editForm.endTime && editForm.startTime >= editForm.endTime) {
@@ -186,6 +211,7 @@ function MyBookingsPage() {
         setActionError(error.response.data.message);
       } else if (error.response?.data?.messages) {
         setEditErrors(error.response.data.messages);
+        setActionError("Please fix the validation errors");
       } else {
         setActionError("Failed to update booking");
       }
@@ -257,11 +283,13 @@ function MyBookingsPage() {
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
+      const search = searchTerm.toLowerCase();
+
       const matchesSearch =
-        booking.id.toString().includes(searchTerm.toLowerCase()) ||
-        booking.resourceId.toString().includes(searchTerm.toLowerCase()) ||
-        booking.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.status.toLowerCase().includes(searchTerm.toLowerCase());
+        booking.id.toString().includes(search) ||
+        booking.resourceId.toString().includes(search) ||
+        booking.purpose.toLowerCase().includes(search) ||
+        booking.status.toLowerCase().includes(search);
 
       const matchesStatus =
         statusFilter === "ALL" ? true : booking.status === statusFilter;
@@ -362,7 +390,15 @@ function MyBookingsPage() {
               >
                 My Bookings
               </h1>
-             
+              <p
+                style={{
+                  marginTop: "10px",
+                  color: "#64748b",
+                  fontSize: "16px",
+                }}
+              >
+                Search, filter, edit, cancel, and manage your booking requests.
+              </p>
             </div>
 
             <div
@@ -500,6 +536,10 @@ function MyBookingsPage() {
           <div style={{ display: "grid", gap: "24px" }}>
             {filteredBookings.map((booking) => {
               const statusStyles = getStatusStyles(booking.status);
+              const editStartTimeMin =
+                editBookingId === booking.id && editForm.bookingDate === today
+                  ? currentTime
+                  : "";
 
               return (
                 <div
@@ -539,7 +579,6 @@ function MyBookingsPage() {
                         >
                           Booking #{booking.id}
                         </h2>
-
                         <span
                           style={{
                             padding: "8px 14px",
@@ -668,6 +707,7 @@ function MyBookingsPage() {
                           <input
                             type="date"
                             name="bookingDate"
+                            min={today}
                             value={editForm.bookingDate}
                             onChange={handleEditChange}
                             style={inputStyle}
@@ -682,6 +722,7 @@ function MyBookingsPage() {
                           <input
                             type="time"
                             name="startTime"
+                            min={editStartTimeMin}
                             value={editForm.startTime}
                             onChange={handleEditChange}
                             style={inputStyle}
