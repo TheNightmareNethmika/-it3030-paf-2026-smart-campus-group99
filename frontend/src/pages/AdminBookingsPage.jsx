@@ -150,65 +150,106 @@ function AdminBookingsPage() {
     };
   };
 
+  const detailCardStyle = {
+    backgroundColor: "#f8fafc",
+    borderRadius: "14px",
+    padding: "16px",
+    border: "1px solid #e5e7eb",
+  };
+
+  const detailLabelStyle = {
+    fontSize: "14px",
+    color: "#64748b",
+    marginBottom: "6px",
+    fontWeight: "500",
+  };
+
+  const detailValueStyle = {
+    fontSize: "17px",
+    fontWeight: "700",
+    color: "#0f172a",
+    wordBreak: "break-word",
+  };
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#eef0f3",
-        padding: "30px 15px",
+        background: "linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%)",
+        padding: "32px 16px",
       }}
     >
       <div
         style={{
-          maxWidth: "1100px",
+          maxWidth: "1200px",
           margin: "0 auto",
-          backgroundColor: "#ffffff",
-          borderRadius: "18px",
-          padding: "28px",
-          boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "12px",
-            flexWrap: "wrap",
-            marginBottom: "20px",
+            backgroundColor: "#ffffff",
+            borderRadius: "24px",
+            padding: "28px",
+            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+            marginBottom: "22px",
           }}
         >
-          <div>
-            <h1 style={{ margin: 0 }}>Admin Booking Management</h1>
-            <p style={{ marginTop: "8px", color: "#555" }}>
-              Review, approve, reject, and delete booking requests.
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate("/")}
+          <div
             style={{
-              padding: "10px 16px",
-              backgroundColor: "#111827",
-              color: "#fff",
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontWeight: "600",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "16px",
+              flexWrap: "wrap",
             }}
           >
-            Back to Resources
-          </button>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "34px",
+                  color: "#0f172a",
+                }}
+              >
+                Admin Booking Management
+              </h1>
+              <p
+                style={{
+                  marginTop: "10px",
+                  color: "#64748b",
+                  fontSize: "16px",
+                }}
+              >
+                Review, approve, reject, and delete booking requests.
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: "12px 16px",
+                backgroundColor: "#ede9fe",
+                color: "#6d28d9",
+                borderRadius: "14px",
+                fontWeight: "700",
+                minWidth: "120px",
+                textAlign: "center",
+              }}
+            >
+              Total: {bookings.length}
+            </div>
+          </div>
         </div>
 
         {successMessage && (
           <div
             style={{
-              backgroundColor: "#e8f8ee",
+              backgroundColor: "#ecfdf5",
               color: "#166534",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
               marginBottom: "18px",
+              border: "1px solid #bbf7d0",
+              boxShadow: "0 4px 10px rgba(22, 101, 52, 0.08)",
             }}
           >
             {successMessage}
@@ -220,9 +261,11 @@ function AdminBookingsPage() {
             style={{
               backgroundColor: "#fef2f2",
               color: "#b91c1c",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
               marginBottom: "18px",
+              border: "1px solid #fecaca",
+              boxShadow: "0 4px 10px rgba(185, 28, 28, 0.08)",
             }}
           >
             {actionError}
@@ -230,39 +273,60 @@ function AdminBookingsPage() {
         )}
 
         {loading ? (
-          <p>Loading bookings...</p>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "24px",
+              borderRadius: "20px",
+              boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            Loading bookings...
+          </div>
         ) : pageError ? (
           <div
             style={{
               backgroundColor: "#fef2f2",
               color: "#b91c1c",
-              padding: "12px",
-              borderRadius: "10px",
+              padding: "14px 16px",
+              borderRadius: "14px",
             }}
           >
             {pageError}
           </div>
         ) : bookings.length === 0 ? (
-          <p>No bookings found.</p>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "28px",
+              borderRadius: "20px",
+              color: "#64748b",
+              textAlign: "center",
+              boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            No bookings found.
+          </div>
         ) : (
-          <div style={{ display: "grid", gap: "18px" }}>
+          <div style={{ display: "grid", gap: "24px" }}>
             {bookings.map((booking) => (
               <div
                 key={booking.id}
                 style={{
-                  border: "1px solid #ddd",
-                  borderRadius: "14px",
-                  padding: "20px",
-                  backgroundColor: "#fafafa",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "26px",
+                  boxShadow: "0 12px 28px rgba(15, 23, 42, 0.08)",
+                  border: "1px solid #eef2f7",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    gap: "16px",
+                    gap: "18px",
                     flexWrap: "wrap",
-                    marginBottom: "16px",
+                    marginBottom: "24px",
                   }}
                 >
                   <div>
@@ -270,15 +334,23 @@ function AdminBookingsPage() {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "10px",
+                        gap: "12px",
                         flexWrap: "wrap",
                       }}
                     >
-                      <h2 style={{ margin: 0 }}>Booking #{booking.id}</h2>
+                      <h2
+                        style={{
+                          margin: 0,
+                          fontSize: "30px",
+                          color: "#0f172a",
+                        }}
+                      >
+                        Booking #{booking.id}
+                      </h2>
 
                       <span
                         style={{
-                          padding: "6px 12px",
+                          padding: "8px 14px",
                           borderRadius: "999px",
                           fontWeight: "700",
                           fontSize: "14px",
@@ -289,8 +361,14 @@ function AdminBookingsPage() {
                       </span>
                     </div>
 
-                    <p style={{ color: "#666", marginTop: "8px" }}>
-                      Resource ID: {booking.resourceId}
+                    <p
+                      style={{
+                        color: "#64748b",
+                        marginTop: "10px",
+                        fontSize: "16px",
+                      }}
+                    >
+                      Resource ID: #{booking.resourceId}
                     </p>
                   </div>
 
@@ -310,43 +388,73 @@ function AdminBookingsPage() {
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: "14px",
-                    marginBottom: "16px",
+                    gap: "16px",
+                    marginBottom: "20px",
                   }}
                 >
-                  <div><strong>User ID:</strong> {booking.userId}</div>
-                  <div><strong>Date:</strong> {booking.bookingDate}</div>
-                  <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
-                  <div><strong>Purpose:</strong> {booking.purpose}</div>
-                  <div><strong>Expected Attendees:</strong> {booking.expectedAttendees}</div>
-                  <div><strong>Created At:</strong> {booking.createdAt || "-"}</div>
-                  <div><strong>Admin Reason:</strong> {booking.adminReason || "-"}</div>
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>User ID</div>
+                    <div style={detailValueStyle}>{booking.userId}</div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Booking Date</div>
+                    <div style={detailValueStyle}>{booking.bookingDate}</div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Time</div>
+                    <div style={detailValueStyle}>
+                      {booking.startTime} - {booking.endTime}
+                    </div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Purpose</div>
+                    <div style={detailValueStyle}>{booking.purpose}</div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Expected Attendees</div>
+                    <div style={detailValueStyle}>{booking.expectedAttendees}</div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Created At</div>
+                    <div style={detailValueStyle}>{booking.createdAt || "-"}</div>
+                  </div>
+
+                  <div style={detailCardStyle}>
+                    <div style={detailLabelStyle}>Admin Reason</div>
+                    <div style={detailValueStyle}>{booking.adminReason || "-"}</div>
+                  </div>
                 </div>
 
                 {booking.status === "PENDING" && (
                   <div
                     style={{
                       borderTop: "1px solid #e5e7eb",
-                      paddingTop: "16px",
+                      paddingTop: "18px",
                       marginTop: "8px",
                     }}
                   >
                     {activeRejectId !== booking.id && (
-                      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                         <button
                           onClick={() => handleDecision(booking.id, "APPROVED")}
                           disabled={decisionLoadingId === booking.id}
                           style={{
-                            padding: "10px 16px",
+                            padding: "11px 16px",
                             backgroundColor: "#16a34a",
                             color: "#fff",
                             border: "none",
-                            borderRadius: "10px",
+                            borderRadius: "12px",
                             cursor:
                               decisionLoadingId === booking.id
                                 ? "not-allowed"
                                 : "pointer",
                             fontWeight: "600",
+                            boxShadow: "0 6px 14px rgba(22, 163, 74, 0.22)",
                           }}
                         >
                           {decisionLoadingId === booking.id
@@ -357,13 +465,14 @@ function AdminBookingsPage() {
                         <button
                           onClick={() => setActiveRejectId(booking.id)}
                           style={{
-                            padding: "10px 16px",
+                            padding: "11px 16px",
                             backgroundColor: "#dc2626",
                             color: "#fff",
                             border: "none",
-                            borderRadius: "10px",
+                            borderRadius: "12px",
                             cursor: "pointer",
                             fontWeight: "600",
+                            boxShadow: "0 6px 14px rgba(220, 38, 38, 0.22)",
                           }}
                         >
                           Reject
@@ -372,12 +481,21 @@ function AdminBookingsPage() {
                     )}
 
                     {activeRejectId === booking.id && (
-                      <div style={{ marginTop: "14px" }}>
+                      <div
+                        style={{
+                          marginTop: "16px",
+                          backgroundColor: "#fff7f7",
+                          border: "1px solid #fecaca",
+                          padding: "18px",
+                          borderRadius: "16px",
+                        }}
+                      >
                         <label
                           style={{
                             display: "block",
-                            fontWeight: "600",
-                            marginBottom: "8px",
+                            fontWeight: "700",
+                            marginBottom: "10px",
+                            color: "#991b1b",
                           }}
                         >
                           Rejection Reason
@@ -392,12 +510,14 @@ function AdminBookingsPage() {
                           }
                           style={{
                             width: "100%",
-                            maxWidth: "420px",
-                            padding: "10px 12px",
-                            borderRadius: "10px",
+                            maxWidth: "480px",
+                            padding: "12px 14px",
+                            borderRadius: "12px",
                             border: "1px solid #d1d5db",
-                            marginBottom: "12px",
+                            marginBottom: "14px",
                             boxSizing: "border-box",
+                            backgroundColor: "#fff",
+                            fontSize: "14px",
                           }}
                         />
 
@@ -406,16 +526,17 @@ function AdminBookingsPage() {
                             onClick={() => handleDecision(booking.id, "REJECTED")}
                             disabled={decisionLoadingId === booking.id}
                             style={{
-                              padding: "10px 16px",
+                              padding: "11px 16px",
                               backgroundColor: "#dc2626",
                               color: "#fff",
                               border: "none",
-                              borderRadius: "10px",
+                              borderRadius: "12px",
                               cursor:
                                 decisionLoadingId === booking.id
                                   ? "not-allowed"
                                   : "pointer",
                               fontWeight: "600",
+                              boxShadow: "0 6px 14px rgba(220, 38, 38, 0.22)",
                             }}
                           >
                             {decisionLoadingId === booking.id
@@ -432,11 +553,11 @@ function AdminBookingsPage() {
                               }));
                             }}
                             style={{
-                              padding: "10px 16px",
+                              padding: "11px 16px",
                               backgroundColor: "#e5e7eb",
                               color: "#111827",
                               border: "none",
-                              borderRadius: "10px",
+                              borderRadius: "12px",
                               cursor: "pointer",
                               fontWeight: "600",
                             }}
@@ -449,21 +570,22 @@ function AdminBookingsPage() {
                   </div>
                 )}
 
-                <div style={{ marginTop: "16px" }}>
+                <div style={{ marginTop: "18px" }}>
                   <button
                     onClick={() => handleDelete(booking.id)}
                     disabled={deleteLoadingId === booking.id}
                     style={{
-                      padding: "10px 16px",
+                      padding: "11px 16px",
                       backgroundColor: "#111827",
                       color: "#fff",
                       border: "none",
-                      borderRadius: "10px",
+                      borderRadius: "12px",
                       cursor:
                         deleteLoadingId === booking.id
                           ? "not-allowed"
                           : "pointer",
                       fontWeight: "600",
+                      boxShadow: "0 6px 14px rgba(17, 24, 39, 0.18)",
                     }}
                   >
                     {deleteLoadingId === booking.id
