@@ -196,8 +196,8 @@ public class BookingServiceImpl implements BookingService {
             booking = bookingRepository.findByIdAndUserId(bookingId, userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Booking not found or does not belong to user"));
 
-            if (booking.getStatus() == BookingStatus.APPROVED) {
-                throw new InvalidBookingStateException("Approved bookings cannot be deleted directly. Cancel it first.");
+            if (booking.getStatus() != BookingStatus.PENDING) {
+                throw new InvalidBookingStateException("Only pending bookings can be deleted by the user.");
             }
         }
 

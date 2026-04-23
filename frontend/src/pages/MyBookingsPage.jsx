@@ -449,40 +449,42 @@ function MyBookingsPage() {
                       }}
                     >
                       {booking.status === "PENDING" && (
-                        <button
-                          onClick={() => startEdit(booking)}
-                          style={{
-                            padding: "10px 16px",
-                            backgroundColor: "#2563eb",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "10px",
-                            cursor: "pointer",
-                            fontWeight: "600",
-                          }}
-                        >
-                          Edit Booking
-                        </button>
-                      )}
+                        <>
+                          <button
+                            onClick={() => startEdit(booking)}
+                            style={{
+                              padding: "10px 16px",
+                              backgroundColor: "#2563eb",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "10px",
+                              cursor: "pointer",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Edit Booking
+                          </button>
 
-                      <button
-                        onClick={() => handleDeleteBooking(booking.id)}
-                        disabled={deleteLoadingId === booking.id}
-                        style={{
-                          padding: "10px 16px",
-                          backgroundColor: "#b91c1c",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "10px",
-                          cursor:
-                            deleteLoadingId === booking.id ? "not-allowed" : "pointer",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {deleteLoadingId === booking.id
-                          ? "Deleting..."
-                          : "Delete Booking"}
-                      </button>
+                          <button
+                            onClick={() => handleDeleteBooking(booking.id)}
+                            disabled={deleteLoadingId === booking.id}
+                            style={{
+                              padding: "10px 16px",
+                              backgroundColor: "#b91c1c",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "10px",
+                              cursor:
+                                deleteLoadingId === booking.id ? "not-allowed" : "pointer",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {deleteLoadingId === booking.id
+                              ? "Deleting..."
+                              : "Delete Booking"}
+                          </button>
+                        </>
+                      )}
 
                       {booking.status === "APPROVED" && (
                         <button
