@@ -5,6 +5,7 @@ import com.uniflow.system.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -15,14 +16,16 @@ import java.util.Optional;
 
 @Component
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3000");
-
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final String frontendUrl;
 
-    public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository) {
+    public OAuth2SuccessHandler(JwtUtil jwtUtil,
+                                UserRepository userRepository,
+                                @Value("${app.frontend.url:http://localhost:3000}") String frontendUrl) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.frontendUrl = frontendUrl;
     }
 
     @Override
@@ -37,7 +40,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
             
             // Redirect to frontend with token, role, name and email
-            String targetUrl = FRONTEND_URL + "/oauth2/redirect?token=" + token + 
+            String targetUrl = frontendUrl + "/oauth2/redirect?token=" + token + 
                                "&role=" + user.getRole().name() + 
                                "&name=" + (user.getName() != null ? user.getName() : "") +
                                "&email=" + user.getEmail();
