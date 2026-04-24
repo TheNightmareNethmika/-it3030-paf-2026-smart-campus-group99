@@ -13,6 +13,7 @@ import com.paf.helpdesk.repository.TechnicianRepository;
 import com.paf.helpdesk.service.AdminService;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -260,8 +261,126 @@ public class AdminServiceImpl implements AdminService {
                 .toList();
 
         response.setComments(commentResponses);
+        applyEscalationInsight(issue, response);
 
         return response;
+    }
+
+    private void applyEscalationInsight(Issue issue, IssueResponse response) {
+        LocalDateTime now = LocalDateTime.now();
+        long hoursOpen = issue.getCreatedAt() == null ? 0 : Math.max(0, Duration.between(issue.getCreatedAt(), now).toHours());
+        response.setEscalationHoursOpen(hoursOpen);
+
+        LocalDateTime lastTechnicianUpdate = issue.getComments()
+                .stream()
+                .filter(comment -> isTechnicianComment(issue, comment))
+                .map(Comment::getCreatedAt)
+                .filter(createdAt -> createdAt != null)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
+        Long hoursSinceTechnicianUpdate = lastTechnicianUpdate == null
+                ? null
+                : Math.max(0, Duration.between(lastTechnicianUpdate, now).toHours());
+        response.setEscalationHoursSinceTechnicianUpdate(hoursSinceTechnicianUpdate);
+
+        String normalizedStatus = issue.getStatus() == null ? "" : issue.getStatus().trim().toUpperCase();
+        String normalizedPriority = issue.getPriority() == null ? "" : issue.getPriority().trim().toUpperCase();
+        boolean highPriority = List.of("HIGH", "URGENT", "CRITICAL").contains(normalizedPriority);
+        boolean assigned = issue.getAssignedTechnicianEmail() != null && !issue.getAssignedTechnicianEmail().isBlank();
+
+        if ("OPEN".equals(normalizedStatus) && !assigned && hoursOpen >= 24) {
+            setEscalation(response,
+                    "ESCALATED",
+                    "Unassigned Delay",
+                    "This issue has remained open without a technician assignment for over 24 hours.",
+                    "Assign a technician immediately and confirm the first response.");
+            return;
+        }
+
+        if ("IN PROGRESS".equals(normalizedStatus) && hoursSinceTechnicianUpdate != null && hoursSinceTechnicianUpdate >= 24) {
+            setEscalation(response,
+                    "ESCALATED",
+                    "Technician Silence",
+                    "No technician update has been posted for at least 24 hours while the issue is in progress.",
+                    "Send a private check-in and review whether reassignment or escalation is needed.");
+            return;
+        }
+
+        if ("IN PROGRESS".equals(normalizedStatus) && hoursOpen >= 72) {
+            setEscalation(response,
+                    "ESCALATED",
+                    "Long Running Ticket",
+                    "This issue has stayed active for more than 72 hours without resolution.",
+                    "Review priority, intervene with the technician, and decide the next action.");
+            return;
+        }
+
+        if ("OPEN".equals(normalizedStatus) && highPriority && hoursOpen >= 8) {
+            setEscalation(response,
+                    "NEEDS ATTENTION",
+                    "High Priority Waiting",
+                    "A high-priority issue has been waiting in the open queue for more than 8 hours.",
+                    "Prioritize assignment and monitor the first technician response closely.");
+            return;
+        }
+
+        if ("OPEN".equals(normalizedStatus) && assigned && hoursOpen >= 12) {
+            setEscalation(response,
+                    "NEEDS ATTENTION",
+                    "Assigned But Not Started",
+                    "This issue was assigned but is still open after 12 hours with no work started.",
+                    "Follow up with the assigned technician and confirm the work start time.");
+            return;
+        }
+
+        if ("IN PROGRESS".equals(normalizedStatus) && hoursSinceTechnicianUpdate != null && hoursSinceTechnicianUpdate >= 12) {
+            setEscalation(response,
+                    "DELAYED",
+                    "Update Delay",
+                    "The issue is in progress, but the technician has not posted an update for over 12 hours.",
+                    "Request a progress update to keep the ticket moving.");
+            return;
+        }
+
+        response.setEscalationFlagged(false);
+        response.setEscalationLevel("ON TRACK");
+        response.setEscalationTitle("On Track");
+        response.setEscalationReason("This ticket is progressing within the expected response window.");
+        response.setEscalationAction("Continue monitoring through the normal workflow.");
+    }
+
+    private void setEscalation(IssueResponse response,
+                               String level,
+                               String title,
+                               String reason,
+                               String action) {
+        response.setEscalationFlagged(true);
+        response.setEscalationLevel(level);
+        response.setEscalationTitle(title);
+        response.setEscalationReason(reason);
+        response.setEscalationAction(action);
+    }
+
+    private boolean isTechnicianComment(Issue issue, Comment comment) {
+        if (comment.getAuthorEmail() == null) {
+            return false;
+        }
+
+        String authorEmail = comment.getAuthorEmail().trim().toLowerCase();
+        String assignedEmail = issue.getAssignedTechnicianEmail() == null
+                ? ""
+                : issue.getAssignedTechnicianEmail().trim().toLowerCase();
+        String authorName = comment.getAuthorName() == null
+                ? ""
+                : comment.getAuthorName().trim().toLowerCase();
+        String assignedName = issue.getAssignedTechnicianName() == null
+                ? ""
+                : issue.getAssignedTechnicianName().trim().toLowerCase();
+
+        return authorEmail.equals(assignedEmail)
+                || authorName.equals(assignedName)
+                || "technician@helpdesk.edu".equals(authorEmail);
     }
 
     private CommentResponse mapToCommentResponse(Comment comment) {

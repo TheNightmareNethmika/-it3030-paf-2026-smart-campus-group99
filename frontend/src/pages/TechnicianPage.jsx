@@ -39,6 +39,19 @@ function getDisplayStatus(issue) {
   return issue.technicianStatus || "ASSIGNED";
 }
 
+function isTechnicianComment(issue, comment) {
+  const authorEmail = (comment?.authorEmail || "").trim().toLowerCase();
+  const authorName = (comment?.authorName || "").trim().toLowerCase();
+  const assignedEmail = (issue?.assignedTechnicianEmail || "").trim().toLowerCase();
+  const assignedName = (issue?.assignedTechnicianName || "").trim().toLowerCase();
+
+  return (
+    (assignedEmail && authorEmail === assignedEmail) ||
+    (assignedName && authorName === assignedName) ||
+    authorEmail === "technician@helpdesk.edu"
+  );
+}
+
 export default function TechnicianPage() {
   const [issues, setIssues] = useState([]);
   const [summary, setSummary] = useState({});
@@ -448,9 +461,7 @@ export default function TechnicianPage() {
   };
 
   const renderDiscussionNode = (comment, level = 0) => {
-    const isOwnTechnicianComment =
-      selectedIssue?.assignedTechnicianEmail &&
-      comment.authorEmail === selectedIssue.assignedTechnicianEmail;
+    const isOwnTechnicianComment = isTechnicianComment(selectedIssue, comment);
 
     return (
       <div
@@ -467,7 +478,10 @@ export default function TechnicianPage() {
       >
         <div className="conversation-card">
           <div className="conversation-top">
-            <span className="conversation-author">{comment.authorName}</span> •{" "}
+            <span className="conversation-author">{comment.authorName}</span>
+            {isTechnicianComment(selectedIssue, comment) && (
+              <span className="role-badge">TECH</span>
+            )} •{" "}
             {formatDateTime(comment.createdAt)}
           </div>
           <div className="conversation-text">{comment.text}</div>
@@ -1127,6 +1141,23 @@ export default function TechnicianPage() {
         .conversation-author {
           font-weight: 900;
           color: #111827;
+        }
+
+        .role-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 8px;
+          margin-right: 2px;
+          padding: 2px 7px;
+          border-radius: 999px;
+          border: 1px solid rgba(37, 99, 235, 0.14);
+          background: rgba(37, 99, 235, 0.08);
+          color: #1d4ed8;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          vertical-align: middle;
         }
 
         .conversation-text {

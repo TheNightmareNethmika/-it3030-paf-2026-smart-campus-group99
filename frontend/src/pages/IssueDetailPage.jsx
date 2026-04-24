@@ -263,6 +263,19 @@ const handleDeleteComment = async (commentId) => {
 
   const stageState = getStageState(ticket?.status);
 
+  const isTechnicianComment = (comment) => {
+    const authorEmail = (comment?.authorEmail || "").trim().toLowerCase();
+    const authorName = (comment?.authorName || "").trim().toLowerCase();
+    const assignedEmail = (ticket?.assignedTechnicianEmail || "").trim().toLowerCase();
+    const assignedName = (ticket?.assignedTechnicianName || "").trim().toLowerCase();
+
+    return (
+      (assignedEmail && authorEmail === assignedEmail) ||
+      (assignedName && authorName === assignedName) ||
+      authorEmail === "technician@helpdesk.edu"
+    );
+  };
+
     const getGalleryClass = (images) => {
     const count = images?.length || 0;
     if (count === 1) return "single-image";
@@ -365,6 +378,9 @@ const buildCommentTree = (comments = []) => {
           <div className="comment-body">
             <div className="comment-top">
               <span className="comment-author">{comment.authorName}</span>
+              {isTechnicianComment(comment) && (
+                <span className="role-badge">TECH</span>
+              )}
               <span className="dot-separator">•</span>
               <span className="comment-time">{formatDateTime(comment.createdAt)}</span>
             </div>
@@ -975,6 +991,20 @@ const handleReplyToComment = (comment) => {
           font-size: 15px;
           font-weight: 700;
           color: #111827;
+        }
+
+        .role-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px 7px;
+          border-radius: 999px;
+          border: 1px solid rgba(37, 99, 235, 0.14);
+          background: rgba(37, 99, 235, 0.08);
+          color: #1d4ed8;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
         }
 
         .comment-time {

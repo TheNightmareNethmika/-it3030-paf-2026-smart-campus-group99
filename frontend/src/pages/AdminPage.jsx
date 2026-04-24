@@ -34,6 +34,16 @@ const loadStoredTab = (key, fallback, allowedValues) => {
   return allowedValues.includes(savedValue) ? savedValue : fallback;
 };
 
+const loadStoredAttentionAcks = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    return JSON.parse(window.localStorage.getItem("helpdesk-admin-escalation-acks") || "{}");
+  } catch {
+    return {};
+  }
+};
+
 export default function AdminPage() {
   const [issues, setIssues] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -62,6 +72,10 @@ export default function AdminPage() {
   const [techTeamFilter, setTechTeamFilter] = useState("all");
   const [techSpecFilter, setTechSpecFilter] = useState("all");
   const [techStatusFilter, setTechStatusFilter] = useState("all");
+  const [showAttentionPanel, setShowAttentionPanel] = useState(false);
+  const [acknowledgedEscalations, setAcknowledgedEscalations] = useState(() =>
+    loadStoredAttentionAcks()
+  );
   const discussionNodeRefs = useRef({});
 
   const getAdminEmptyState = () => {
@@ -270,6 +284,14 @@ export default function AdminPage() {
     window.localStorage.setItem("helpdesk-admin-status-filter", statusFilter);
   }, [statusFilter]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "helpdesk-admin-escalation-acks",
+      JSON.stringify(acknowledgedEscalations)
+    );
+  }, [acknowledgedEscalations]);
+
   const loadAdminData = async () => {
     try {
       setLoading(true);
@@ -390,7 +412,104 @@ export default function AdminPage() {
     [issues, selectedIssueId]
   );
 
+  const getEscalationSignature = (issue) =>
+    [issue?.escalationLevel, issue?.escalationTitle, issue?.escalationReason]
+      .filter(Boolean)
+      .join("|");
+
+  const getEscalationRank = (level) => {
+    if (level === "ESCALATED") return 3;
+    if (level === "NEEDS ATTENTION") return 2;
+    if (level === "DELAYED") return 1;
+    return 0;
+  };
+
+  const escalatedIssues = useMemo(
+    () =>
+      issues.filter((issue) => {
+        if (!issue.escalationFlagged) return false;
+        const signature = getEscalationSignature(issue);
+        return acknowledgedEscalations[String(issue.id)] !== signature;
+      }),
+    [issues, acknowledgedEscalations]
+  );
+
+  const escalationSummaryCount = escalatedIssues.length;
+
+  const getEscalationTone = (level) => {
+    if (level === "ESCALATED") {
+      return {
+        badgeBg: "#fee2e2",
+        badgeText: "#b91c1c",
+        border: "#fecaca",
+        surface: "linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%)",
+      };
+    }
+
+    if (level === "NEEDS ATTENTION") {
+      return {
+        badgeBg: "#fef3c7",
+        badgeText: "#b45309",
+        border: "#fcd34d",
+        surface: "linear-gradient(180deg, #fffdf5 0%, #fff7e8 100%)",
+      };
+    }
+
+    if (level === "DELAYED") {
+      return {
+        badgeBg: "#dbeafe",
+        badgeText: "#1d4ed8",
+        border: "#bfdbfe",
+        surface: "linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%)",
+      };
+    }
+
+    return {
+      badgeBg: "#e5e7eb",
+      badgeText: "#4b5563",
+      border: "#d1d5db",
+      surface: "#ffffff",
+    };
+  };
+
   const issueImages = selectedIssue?.imageUrls || [];
+
+  useEffect(() => {
+    setAcknowledgedEscalations((prev) => {
+      const next = {};
+
+      issues.forEach((issue) => {
+        if (!issue.escalationFlagged) return;
+        const signature = getEscalationSignature(issue);
+        if (prev[String(issue.id)] === signature) {
+          next[String(issue.id)] = signature;
+        }
+      });
+
+      const sameKeys =
+        Object.keys(prev).length === Object.keys(next).length &&
+        Object.keys(prev).every((key) => prev[key] === next[key]);
+
+      return sameKeys ? prev : next;
+    });
+  }, [issues]);
+
+  useEffect(() => {
+    if (escalationSummaryCount === 0 && showAttentionPanel) {
+      setShowAttentionPanel(false);
+    }
+  }, [escalationSummaryCount, showAttentionPanel]);
+
+  const acknowledgeEscalation = (issue) => {
+    if (!issue?.escalationFlagged) return;
+    const signature = getEscalationSignature(issue);
+    if (!signature) return;
+
+    setAcknowledgedEscalations((prev) => ({
+      ...prev,
+      [String(issue.id)]: signature,
+    }));
+  };
 
   const getCommentVisibility = (comment) =>
     comment?.visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC";
@@ -466,6 +585,20 @@ export default function AdminPage() {
   const visibleTechnicianAlerts =
     technicianAlertTab === "PRIVATE" ? privateTechnicianAlerts : publicTechnicianAlerts;
 
+  const isTechnicianComment = (comment) => {
+    const authorEmail = (comment?.authorEmail || "").trim().toLowerCase();
+    const authorName = (comment?.authorName || "").trim().toLowerCase();
+    const assignedEmail = (selectedIssue?.assignedTechnicianEmail || "").trim().toLowerCase();
+    const assignedName = (selectedIssue?.assignedTechnicianName || "").trim().toLowerCase();
+
+    return (
+      (authorEmail && technicianEmails.has(authorEmail)) ||
+      (assignedEmail && authorEmail === assignedEmail) ||
+      (assignedName && authorName === assignedName) ||
+      authorEmail === "technician@helpdesk.edu"
+    );
+  };
+
   useEffect(() => {
     if (technicianAlertTab !== "PRIVATE" || privateTechnicianAlerts.length === 0) {
       return;
@@ -484,7 +617,9 @@ export default function AdminPage() {
 
   const handleStatusChange = async (issueId, status) => {
     try {
+      const issueToAcknowledge = issues.find((issue) => issue.id === issueId);
       await updateAdminIssueStatus(issueId, status);
+      acknowledgeEscalation(issueToAcknowledge);
       await loadAdminData();
       setStatusFilter(status);
       setSelectedIssueId(null);
@@ -500,7 +635,9 @@ export default function AdminPage() {
 
   const handleAssignTechnician = async (issueId, technicianId) => {
     try {
+      const issueToAcknowledge = issues.find((issue) => issue.id === issueId);
       await assignIssueTechnician(issueId, technicianId);
+      acknowledgeEscalation(issueToAcknowledge);
       await loadAdminData();
       setSelectedIssueId(issueId);
     } catch (err) {
@@ -511,7 +648,9 @@ export default function AdminPage() {
 
   const handleUnassignTechnician = async (issueId) => {
     try {
+      const issueToAcknowledge = issues.find((issue) => issue.id === issueId);
       await unassignIssueTechnician(issueId);
+      acknowledgeEscalation(issueToAcknowledge);
       await loadAdminData();
       setSelectedIssueId(issueId);
     } catch (err) {
@@ -536,6 +675,7 @@ export default function AdminPage() {
         parentCommentId,
         replyToComment ? getCommentVisibility(replyToComment) : adminMessageVisibility
       );
+      acknowledgeEscalation(selectedIssue);
 
       const updatedIssue = response.data;
 
@@ -628,6 +768,7 @@ export default function AdminPage() {
     if (!confirmed) return;
 
     try {
+      acknowledgeEscalation(selectedIssue);
       await deleteResolvedIssue(selectedIssue.id);
       await loadAdminData();
     } catch (err) {
@@ -683,7 +824,8 @@ export default function AdminPage() {
       >
         <div className="conversation-card">
           <div className="conversation-top">
-            <span className="conversation-author">{comment.authorName}</span> •{" "}
+            <span className="conversation-author">{comment.authorName}</span>
+            {isTechnicianComment(comment) && <span className="role-badge">TECH</span>} •{" "}
             {formatDateTime(comment.createdAt)}
           </div>
           <div className="conversation-text">{comment.text}</div>
@@ -849,7 +991,7 @@ export default function AdminPage() {
 
         .summary-grid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 14px;
           margin-bottom: 22px;
         }
@@ -875,6 +1017,16 @@ export default function AdminPage() {
           font-size: 30px;
           font-weight: 800;
           color: #0f172a;
+        }
+
+        .summary-card.attention {
+          background: linear-gradient(145deg, #fff8ec 0%, #fff3da 100%);
+          border-color: #f6d18b;
+          cursor: pointer;
+        }
+
+        .summary-card.attention .summary-value {
+          color: #b45309;
         }
 
         .toolbar {
@@ -920,6 +1072,142 @@ export default function AdminPage() {
           border-color: #2563eb;
           color: #ffffff;
           box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+        }
+
+        .assistant-chip {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 28px;
+          padding: 0 12px;
+          border-radius: 999px;
+          background: rgba(37, 99, 235, 0.1);
+          color: #1d4ed8;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .escalation-level-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 28px;
+          padding: 0 12px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          border: 1px solid transparent;
+        }
+
+        .attention-panel {
+          margin-bottom: 18px;
+          padding: 20px;
+          border-radius: 24px;
+          border: 1px solid #f5d08a;
+          background: linear-gradient(135deg, #fffaf0 0%, #fff6e8 100%);
+          box-shadow: 0 14px 28px rgba(180, 83, 9, 0.08);
+        }
+
+        .attention-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+
+        .attention-panel-title {
+          font-size: 24px;
+          font-weight: 800;
+          color: #0f172a;
+          margin-top: 8px;
+        }
+
+        .attention-panel-text {
+          font-size: 14px;
+          line-height: 1.8;
+          color: #6b7280;
+          max-width: 780px;
+        }
+
+        .attention-close-btn {
+          border: 1px solid #f2c77b;
+          border-radius: 999px;
+          padding: 10px 14px;
+          background: rgba(255, 255, 255, 0.78);
+          color: #9a5b05;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .attention-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .attention-ticket {
+          border-radius: 18px;
+          border: 1px solid #ecd6aa;
+          background: rgba(255, 255, 255, 0.82);
+          padding: 16px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 14px;
+          align-items: center;
+        }
+
+        .attention-ticket-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: #111827;
+          margin: 10px 0 8px;
+        }
+
+        .attention-ticket-meta {
+          font-size: 13px;
+          line-height: 1.7;
+          color: #6b7280;
+          margin-bottom: 8px;
+        }
+
+        .attention-ticket-reason {
+          font-size: 14px;
+          line-height: 1.8;
+          color: #4b5563;
+        }
+
+        .attention-ticket-action {
+          margin-top: 8px;
+          font-size: 12px;
+          line-height: 1.7;
+          color: #8a5303;
+          font-weight: 700;
+        }
+
+        .attention-ticket-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 10px;
+          min-width: 180px;
+        }
+
+        .attention-review-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 11px 16px;
+          background: #b45309;
+          color: #ffffff;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 10px 20px rgba(180, 83, 9, 0.18);
         }
 
         .alert-tabs {
@@ -1166,6 +1454,76 @@ export default function AdminPage() {
 
         .tech-alert strong {
           color: #7c2d12;
+        }
+
+        .issue-escalation-panel {
+          margin-top: 14px;
+          padding: 14px 15px;
+          border-radius: 18px;
+          border: 1px solid #e5e7eb;
+        }
+
+        .issue-escalation-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
+
+        .issue-escalation-title {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+        }
+
+        .issue-escalation-text {
+          font-size: 13px;
+          line-height: 1.7;
+          color: #5b6472;
+          margin-bottom: 8px;
+        }
+
+        .issue-escalation-action {
+          font-size: 12px;
+          line-height: 1.7;
+          color: #7c4a03;
+          font-weight: 700;
+        }
+
+        .smart-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .assistant-card {
+          border-radius: 18px;
+          border: 1px solid #e5edf8;
+          background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+          padding: 16px;
+        }
+
+        .assistant-card-label {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #64748b;
+          margin-bottom: 8px;
+        }
+
+        .assistant-card-value {
+          font-size: 22px;
+          line-height: 1.35;
+          font-weight: 800;
+          color: #0f172a;
+        }
+
+        .assistant-card-text {
+          font-size: 14px;
+          line-height: 1.75;
+          color: #64748b;
         }
 
         .detail-card {
@@ -1489,6 +1847,23 @@ export default function AdminPage() {
           color: #111827;
         }
 
+        .role-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: 8px;
+          margin-right: 2px;
+          padding: 2px 7px;
+          border-radius: 999px;
+          border: 1px solid rgba(37, 99, 235, 0.14);
+          background: rgba(37, 99, 235, 0.08);
+          color: #1d4ed8;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          vertical-align: middle;
+        }
+
         .conversation-text {
           font-size: 15px;
           line-height: 1.8;
@@ -1718,6 +2093,7 @@ export default function AdminPage() {
           }
 
           .two-grid,
+          .smart-grid,
           .tech-grid,
           .detail-gallery {
             grid-template-columns: 1fr;
@@ -1725,6 +2101,15 @@ export default function AdminPage() {
 
           .issue-card-top {
             grid-template-columns: 1fr;
+          }
+
+          .attention-panel-header,
+          .attention-ticket {
+            grid-template-columns: 1fr;
+          }
+
+          .attention-ticket-controls {
+            align-items: flex-start;
           }
 
           .detail-header {
@@ -1791,6 +2176,13 @@ export default function AdminPage() {
             <div className="summary-label">Unassigned</div>
             <div className="summary-value">{summary.unassigned || 0}</div>
           </div>
+          <div
+            className="summary-card attention"
+            onClick={() => setShowAttentionPanel((prev) => !prev)}
+          >
+            <div className="summary-label">Needs Attention</div>
+            <div className="summary-value">{escalationSummaryCount}</div>
+          </div>
         </div>
 
         <div className="toolbar">
@@ -1813,6 +2205,76 @@ export default function AdminPage() {
             ))}
           </div>
         </div>
+
+        {showAttentionPanel && escalationSummaryCount > 0 && (
+          <div className="attention-panel">
+            <div className="attention-panel-header">
+              <div>
+                <span className="assistant-chip">Smart Escalation Assistant</span>
+                <div className="attention-panel-title">Needs Attention Review Queue</div>
+                <div className="attention-panel-text">
+                  These tickets need timely admin review. Open one, take an action, and it
+                  will leave this review queue.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="attention-close-btn"
+                onClick={() => setShowAttentionPanel(false)}
+              >
+                Hide Queue
+              </button>
+            </div>
+
+            <div className="attention-list">
+              {[...escalatedIssues]
+                .sort((a, b) => {
+                  const levelDiff =
+                    getEscalationRank(b.escalationLevel) - getEscalationRank(a.escalationLevel);
+                  if (levelDiff !== 0) return levelDiff;
+                  return (b.escalationHoursOpen || 0) - (a.escalationHoursOpen || 0);
+                })
+                .map((issue) => (
+                  <div className="attention-ticket" key={issue.id}>
+                    <div>
+                      <span className="assistant-chip">Ticket #{issue.id}</span>
+                      <div className="attention-ticket-title">{issue.title}</div>
+                      <div className="attention-ticket-meta">
+                        {issue.status} | {issue.priority} | {issue.building} | Reported by{" "}
+                        {issue.reporterName}
+                      </div>
+                      <div className="attention-ticket-reason">{issue.escalationReason}</div>
+                      <div className="attention-ticket-action">{issue.escalationAction}</div>
+                    </div>
+
+                    <div className="attention-ticket-controls">
+                      <span
+                        className="escalation-level-badge"
+                        style={{
+                          background: getEscalationTone(issue.escalationLevel).badgeBg,
+                          color: getEscalationTone(issue.escalationLevel).badgeText,
+                          borderColor: getEscalationTone(issue.escalationLevel).border,
+                        }}
+                      >
+                        {issue.escalationLevel}
+                      </span>
+                      <button
+                        type="button"
+                        className="attention-review-btn"
+                        onClick={() => {
+                          setStatusFilter(issue.status);
+                          setSelectedIssueId(issue.id);
+                        }}
+                      >
+                        Review Ticket
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         <div className="admin-layout">
           <div className="panel-card issues-panel">
@@ -1871,6 +2333,32 @@ export default function AdminPage() {
                         <span className="meta-pill">{issue.priority}</span>
                         <span className="meta-pill">{issue.building}</span>
                       </div>
+
+                      {issue.escalationFlagged && (
+                        <div
+                          className="issue-escalation-panel"
+                          style={{
+                            borderColor: getEscalationTone(issue.escalationLevel).border,
+                            background: getEscalationTone(issue.escalationLevel).surface,
+                          }}
+                        >
+                          <div className="issue-escalation-top">
+                            <div className="issue-escalation-title">Smart Escalation Assistant</div>
+                            <span
+                              className="escalation-level-badge"
+                              style={{
+                                background: getEscalationTone(issue.escalationLevel).badgeBg,
+                                color: getEscalationTone(issue.escalationLevel).badgeText,
+                                borderColor: getEscalationTone(issue.escalationLevel).border,
+                              }}
+                            >
+                              {issue.escalationLevel}
+                            </span>
+                          </div>
+                          <div className="issue-escalation-text">{issue.escalationReason}</div>
+                          <div className="issue-escalation-action">{issue.escalationAction}</div>
+                        </div>
+                      )}
 
                       {statusFilter === "IN PROGRESS" && alert && (
                         <div className="tech-alert">
@@ -1964,6 +2452,60 @@ export default function AdminPage() {
                       <div className="info-label">Assigned At</div>
                       <div className="info-value">
                         {formatDateTime(selectedIssue.assignedAt)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section">
+                  <div className="section-title">Smart Escalation Assistant</div>
+                  <div className="smart-grid">
+                    <div
+                      className="assistant-card"
+                      style={{
+                        borderColor: getEscalationTone(selectedIssue.escalationLevel).border,
+                        background: getEscalationTone(selectedIssue.escalationLevel).surface,
+                      }}
+                    >
+                      <div className="assistant-card-label">Current Signal</div>
+                      <div className="assistant-card-value">
+                        {selectedIssue.escalationTitle || "On Track"}
+                      </div>
+                      <div style={{ marginTop: "10px" }}>
+                        <span
+                          className="escalation-level-badge"
+                          style={{
+                            background: getEscalationTone(selectedIssue.escalationLevel).badgeBg,
+                            color: getEscalationTone(selectedIssue.escalationLevel).badgeText,
+                            borderColor: getEscalationTone(selectedIssue.escalationLevel).border,
+                          }}
+                        >
+                          {selectedIssue.escalationLevel || "ON TRACK"}
+                        </span>
+                      </div>
+                      <div className="assistant-card-text" style={{ marginTop: "12px" }}>
+                        {selectedIssue.escalationReason}
+                      </div>
+                    </div>
+
+                    <div className="assistant-card">
+                      <div className="assistant-card-label">Recommended Action</div>
+                      <div className="assistant-card-text">{selectedIssue.escalationAction}</div>
+                      <div className="assistant-card-label" style={{ marginTop: "16px" }}>
+                        Time Signals
+                      </div>
+                      <div className="assistant-card-text">
+                        Open for <strong>{selectedIssue.escalationHoursOpen || 0}h</strong>
+                        {selectedIssue.escalationHoursSinceTechnicianUpdate !== null &&
+                          selectedIssue.escalationHoursSinceTechnicianUpdate !== undefined && (
+                            <>
+                              <br />
+                              Last technician update <strong>
+                                {selectedIssue.escalationHoursSinceTechnicianUpdate}h
+                              </strong>{" "}
+                              ago
+                            </>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -2167,7 +2709,10 @@ export default function AdminPage() {
                             <div className="conversation-top">
                               <span className="conversation-author">
                                 {comment.authorName}
-                              </span>{" "}
+                              </span>
+                              {isTechnicianComment(comment) && (
+                                <span className="role-badge">TECH</span>
+                              )}{" "}
                               • {formatDateTime(comment.createdAt)}
                             </div>
                             <div className="conversation-text">{comment.text}</div>

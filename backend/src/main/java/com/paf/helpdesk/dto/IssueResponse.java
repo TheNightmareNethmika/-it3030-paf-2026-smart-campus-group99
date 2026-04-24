@@ -26,6 +26,13 @@ public class IssueResponse {
     private String assignedTeam;
     private LocalDateTime assignedAt;
     private String technicianStatus;
+    private boolean escalationFlagged;
+    private String escalationLevel;
+    private String escalationTitle;
+    private String escalationReason;
+    private String escalationAction;
+    private Long escalationHoursOpen;
+    private Long escalationHoursSinceTechnicianUpdate;
     private List<CommentResponse> comments;
     private List<String> imageUrls;
     private boolean visibleToAdmin;
@@ -207,6 +214,62 @@ public class IssueResponse {
 
     public void setTechnicianStatus(String technicianStatus) {
         this.technicianStatus = technicianStatus;
+    }
+
+    public boolean isEscalationFlagged() {
+        return escalationFlagged;
+    }
+
+    public void setEscalationFlagged(boolean escalationFlagged) {
+        this.escalationFlagged = escalationFlagged;
+    }
+
+    public String getEscalationLevel() {
+        return escalationLevel;
+    }
+
+    public void setEscalationLevel(String escalationLevel) {
+        this.escalationLevel = escalationLevel;
+    }
+
+    public String getEscalationTitle() {
+        return escalationTitle;
+    }
+
+    public void setEscalationTitle(String escalationTitle) {
+        this.escalationTitle = escalationTitle;
+    }
+
+    public String getEscalationReason() {
+        return escalationReason;
+    }
+
+    public void setEscalationReason(String escalationReason) {
+        this.escalationReason = escalationReason;
+    }
+
+    public String getEscalationAction() {
+        return escalationAction;
+    }
+
+    public void setEscalationAction(String escalationAction) {
+        this.escalationAction = escalationAction;
+    }
+
+    public Long getEscalationHoursOpen() {
+        return escalationHoursOpen;
+    }
+
+    public void setEscalationHoursOpen(Long escalationHoursOpen) {
+        this.escalationHoursOpen = escalationHoursOpen;
+    }
+
+    public Long getEscalationHoursSinceTechnicianUpdate() {
+        return escalationHoursSinceTechnicianUpdate;
+    }
+
+    public void setEscalationHoursSinceTechnicianUpdate(Long escalationHoursSinceTechnicianUpdate) {
+        this.escalationHoursSinceTechnicianUpdate = escalationHoursSinceTechnicianUpdate;
     }
 
     public boolean isVisibleToAdmin() {
