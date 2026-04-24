@@ -3,9 +3,11 @@ package com.uniflow.system.controller;
 import com.uniflow.system.model.User;
 import com.uniflow.system.service.AuthService;
 import com.uniflow.system.config.JwtUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,6 +47,11 @@ public class AuthController {
         }
 
         return Map.of("message", "Invalid credentials");
+    }
+
+    @GetMapping("/google")
+    public void googleLogin(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/oauth2/authorization/google");
     }
 
     @GetMapping("/me")

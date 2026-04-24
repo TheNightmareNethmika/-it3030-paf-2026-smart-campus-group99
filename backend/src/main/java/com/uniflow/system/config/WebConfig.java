@@ -1,17 +1,22 @@
 package com.uniflow.system.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3000");
+    private final String frontendUrl;
+
+    public WebConfig(@Value("${app.frontend.url:http://localhost:3000}") String frontendUrl) {
+        this.frontendUrl = frontendUrl;
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(FRONTEND_URL)
+                .allowedOrigins(frontendUrl)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
