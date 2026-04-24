@@ -64,6 +64,203 @@ export default function AdminPage() {
   const [techStatusFilter, setTechStatusFilter] = useState("all");
   const discussionNodeRefs = useRef({});
 
+  const getAdminEmptyState = () => {
+    if (search.trim()) {
+      return {
+        eyebrow: "No matches",
+        title: "Nothing matched this search",
+        description:
+          "Try another keyword, building, reporter, or issue category to surface the right ticket.",
+        accent: "Refine search",
+        support: "Search by title, category, reporter, building, or technician name.",
+      };
+    }
+
+    if (statusFilter === "OPEN") {
+      return {
+        eyebrow: "Open queue clear",
+        title: "No open issues right now",
+        description:
+          "Newly reported requests will appear here for triage, assignment, and next-step coordination.",
+        accent: "Awaiting new reports",
+        support: "Fresh submissions will land here first for review and technician assignment.",
+      };
+    }
+
+    if (statusFilter === "IN PROGRESS") {
+      return {
+        eyebrow: "Work moving smoothly",
+        title: "No issues are in progress",
+        description:
+          "When active work begins, this queue will show the tickets currently being handled by technicians.",
+        accent: "No active work items",
+        support: "Technician updates and latest alerts will appear here while work is underway.",
+      };
+    }
+
+    return {
+      eyebrow: "Resolved queue clear",
+      title: "No resolved issues yet",
+      description:
+        "Completed tickets will collect here so you can review outcomes and remove them from the admin queue when needed.",
+      accent: "Nothing completed yet",
+      support: "Resolved items stay here for final review before you clear them from the queue.",
+    };
+  };
+
+  const renderAdminEmptyState = ({
+    eyebrow,
+    title,
+    description,
+    accent,
+    support,
+    compact = false,
+  }) => {
+    const containerStyle = {
+      minHeight: compact ? "180px" : "340px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      padding: compact ? "24px 20px" : "38px 28px",
+      border: "1px solid #d8e5f6",
+      borderRadius: compact ? "22px" : "28px",
+      background:
+        "radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 52%), linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%)",
+      boxShadow: compact
+        ? "inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 24px rgba(15, 23, 42, 0.04)"
+        : "inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 18px 38px rgba(15, 23, 42, 0.06)",
+    };
+
+    const artStyle = {
+      width: compact ? "68px" : "96px",
+      height: compact ? "68px" : "96px",
+      borderRadius: compact ? "22px" : "30px",
+      background:
+        "radial-gradient(circle at top, rgba(37, 99, 235, 0.18), transparent 58%), linear-gradient(145deg, #ffffff 0%, #edf4ff 100%)",
+      border: "1px solid #d5e3f8",
+      boxShadow: compact
+        ? "inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 12px 24px rgba(37, 99, 235, 0.08)"
+        : "inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 18px 34px rgba(37, 99, 235, 0.12)",
+      display: "grid",
+      placeItems: "center",
+      marginBottom: compact ? "16px" : "22px",
+      position: "relative",
+    };
+
+    const innerArtStyle = {
+      position: "absolute",
+      inset: compact ? "8px" : "10px",
+      borderRadius: compact ? "16px" : "22px",
+      border: "1px solid rgba(143, 179, 232, 0.45)",
+    };
+
+    const glyphStyle = {
+      width: compact ? "36px" : "44px",
+      height: compact ? "36px" : "44px",
+      borderRadius: compact ? "14px" : "16px",
+      border: "2px solid #7fa7df",
+      position: "relative",
+      background: "linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%)",
+      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.9)",
+    };
+
+    const lineCommon = {
+      position: "absolute",
+      left: "8px",
+      right: "8px",
+      height: "2px",
+      borderRadius: "999px",
+      background: "#7fa7df",
+    };
+
+    return (
+      <div style={containerStyle}>
+        <div style={artStyle}>
+          <div style={innerArtStyle} />
+          <div style={glyphStyle}>
+            <div style={{ ...lineCommon, top: compact ? "11px" : "13px" }} />
+            <div
+              style={{
+                ...lineCommon,
+                top: compact ? "19px" : "23px",
+                right: compact ? "12px" : "13px",
+              }}
+            />
+          </div>
+        </div>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#2563eb",
+            marginBottom: "8px",
+          }}
+        >
+          {eyebrow}
+        </div>
+        {accent ? (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "32px",
+              padding: "0 14px",
+              borderRadius: "999px",
+              background: "rgba(37, 99, 235, 0.08)",
+              border: "1px solid rgba(37, 99, 235, 0.12)",
+              color: "#1d4ed8",
+              fontSize: "12px",
+              fontWeight: 800,
+              marginBottom: "12px",
+            }}
+          >
+            {accent}
+          </div>
+        ) : null}
+        <div
+          style={{
+            fontSize: compact ? "20px" : "26px",
+            lineHeight: 1.2,
+            fontWeight: 800,
+            color: "#0f172a",
+            marginBottom: "10px",
+            maxWidth: compact ? "360px" : "520px",
+          }}
+        >
+          {title}
+        </div>
+        <div
+          style={{
+            maxWidth: compact ? "360px" : "420px",
+            color: "#64748b",
+            fontSize: compact ? "14px" : "15px",
+            lineHeight: compact ? 1.7 : 1.8,
+          }}
+        >
+          {description}
+        </div>
+        {support ? (
+          <div
+            style={{
+              marginTop: "16px",
+              fontSize: "13px",
+              lineHeight: 1.7,
+              color: "#7b8798",
+              maxWidth: "430px",
+            }}
+          >
+            {support}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   useEffect(() => {
     loadAdminData();
   }, []);
@@ -604,6 +801,8 @@ export default function AdminPage() {
       : statusFilter === "IN PROGRESS"
       ? "In Progress Queue"
       : "Resolved Queue";
+
+  const emptyState = getAdminEmptyState();
 
   return (
     <>
@@ -1351,6 +1550,158 @@ export default function AdminPage() {
           line-height: 1.8;
         }
 
+        .empty-state {
+          min-height: 340px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 38px 28px;
+          border: 1px solid #d8e5f6;
+          border-radius: 28px;
+          background:
+            radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 52%),
+            linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.75),
+            0 18px 38px rgba(15, 23, 42, 0.06);
+        }
+
+        .empty-state-art {
+          width: 96px;
+          height: 96px;
+          border-radius: 30px;
+          background:
+            radial-gradient(circle at top, rgba(37, 99, 235, 0.18), transparent 58%),
+            linear-gradient(145deg, #ffffff 0%, #edf4ff 100%);
+          border: 1px solid #d5e3f8;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.86),
+            0 18px 34px rgba(37, 99, 235, 0.12);
+          display: grid;
+          place-items: center;
+          margin-bottom: 22px;
+          position: relative;
+        }
+
+        .empty-state-art::before {
+          content: "";
+          position: absolute;
+          inset: 10px;
+          border-radius: 22px;
+          border: 1px solid rgba(143, 179, 232, 0.45);
+        }
+
+        .empty-state-glyph {
+          width: 44px;
+          height: 44px;
+          border-radius: 16px;
+          border: 2px solid #7fa7df;
+          position: relative;
+          background: linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+
+        .empty-state-glyph::before,
+        .empty-state-glyph::after {
+          content: "";
+          position: absolute;
+          left: 8px;
+          right: 8px;
+          height: 2px;
+          border-radius: 999px;
+          background: #7fa7df;
+        }
+
+        .empty-state-glyph::before {
+          top: 13px;
+        }
+
+        .empty-state-glyph::after {
+          top: 23px;
+          right: 13px;
+        }
+
+        .empty-state-eyebrow {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #2563eb;
+          margin-bottom: 8px;
+        }
+
+        .empty-state-accent {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 32px;
+          padding: 0 14px;
+          border-radius: 999px;
+          background: rgba(37, 99, 235, 0.08);
+          border: 1px solid rgba(37, 99, 235, 0.12);
+          color: #1d4ed8;
+          font-size: 12px;
+          font-weight: 800;
+          margin-bottom: 12px;
+        }
+
+        .empty-state-title {
+          font-size: 26px;
+          line-height: 1.2;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 10px;
+        }
+
+        .empty-state-text {
+          max-width: 420px;
+          color: #64748b;
+          font-size: 15px;
+          line-height: 1.8;
+        }
+
+        .empty-state-support {
+          margin-top: 16px;
+          font-size: 13px;
+          line-height: 1.7;
+          color: #7b8798;
+          max-width: 430px;
+        }
+
+        .empty-state.compact {
+          min-height: 180px;
+          padding: 24px 20px;
+          border-radius: 22px;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.75),
+            0 10px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .empty-state-art.compact {
+          width: 68px;
+          height: 68px;
+          border-radius: 22px;
+          margin-bottom: 16px;
+        }
+
+        .empty-state-art.compact::before {
+          inset: 8px;
+          border-radius: 16px;
+        }
+
+        .empty-state-title.compact {
+          font-size: 20px;
+          margin-bottom: 8px;
+        }
+
+        .empty-state-text.compact {
+          max-width: 360px;
+          font-size: 14px;
+          line-height: 1.7;
+        }
+
         @media (max-width: 1250px) {
           .summary-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1471,9 +1822,14 @@ export default function AdminPage() {
 
             <div className="issues-list">
               {loading ? (
-                <div className="empty-note">Loading issues...</div>
+                renderAdminEmptyState({
+                  eyebrow: "Loading queue",
+                  title: "Getting tickets ready",
+                  description: "Current issues are being loaded for this section.",
+                  compact: true,
+                })
               ) : filteredIssues.length === 0 ? (
-                <div className="empty-note">No issues in this section.</div>
+                renderAdminEmptyState(emptyState)
               ) : (
                 filteredIssues.map((issue) => {
                   const alert = latestTechnicianAlert(issue);
@@ -1648,9 +2004,14 @@ export default function AdminPage() {
 
                   {selectedIssue.status === "OPEN" &&
                     !selectedIssue.assignedTechnicianEmail && (
-                      <div className="empty-note" style={{ marginTop: "10px" }}>
-                        Assign a technician first before moving this issue to IN
-                        PROGRESS.
+                      <div style={{ marginTop: "14px" }}>
+                        {renderAdminEmptyState({
+                          eyebrow: "Assignment needed",
+                          title: "Assign a technician first",
+                          description:
+                            "This ticket can move to in progress after a technician has been assigned.",
+                          compact: true,
+                        })}
                       </div>
                     )}
                 </div>
@@ -1716,8 +2077,14 @@ export default function AdminPage() {
 
                     <div className="tech-grid">
                       {filteredTechnicians.length === 0 ? (
-                        <div className="empty-note" style={{ gridColumn: "1 / -1" }}>
-                          No technicians match the selected filters.
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          {renderAdminEmptyState({
+                            eyebrow: "No technician match",
+                            title: "No technicians fit these filters",
+                            description:
+                              "Adjust the team, specialization, or status filters to see more technician options.",
+                            compact: true,
+                          })}
                         </div>
                       ) : (
                         filteredTechnicians.map((tech) => {
@@ -1896,7 +2263,15 @@ export default function AdminPage() {
                 </div>
               </>
             ) : (
-              <div className="empty-note">Select an issue from the left to manage it.</div>
+              renderAdminEmptyState({
+                eyebrow: "Ready to review",
+                accent: "Admin control panel",
+                title: "Select an issue to view details",
+                description:
+                  "Pick a ticket from the queue to review the report, manage workflow updates, and coordinate with the assigned technician.",
+                support:
+                  "Issue details, technician assignment, alerts, and workflow controls will appear here once you select a ticket from the left queue.",
+              })
             )}
           </div>
         </div>

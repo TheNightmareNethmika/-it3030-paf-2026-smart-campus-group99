@@ -65,6 +65,42 @@ export default function TechnicianPage() {
   const [pendingScrollCommentId, setPendingScrollCommentId] = useState(null);
   const discussionNodeRefs = useRef({});
 
+  const getTechnicianEmptyState = () => {
+    if (search.trim()) {
+      return {
+        eyebrow: "No matches",
+        title: "Nothing matched this search",
+        description:
+          "Try another keyword, reporter, building, or category to find the assigned issue you need.",
+      };
+    }
+
+    if (statusFilter === "ASSIGNED") {
+      return {
+        eyebrow: "Assignment queue clear",
+        title: "No assigned issues right now",
+        description:
+          "New admin assignments will appear here before work begins, with issue details and communication history ready to review.",
+      };
+    }
+
+    if (statusFilter === "IN PROGRESS") {
+      return {
+        eyebrow: "Focused workload",
+        title: "No issues are currently in progress",
+        description:
+          "Once you start working on an assigned ticket, it will move here so progress and updates stay easy to track.",
+      };
+    }
+
+    return {
+      eyebrow: "Resolved queue clear",
+      title: "No resolved issues here yet",
+      description:
+        "Technician-completed work will appear here until you remove it from the technician queue.",
+    };
+  };
+
   useEffect(() => {
     loadTechnicianData();
   }, []);
@@ -549,6 +585,8 @@ export default function TechnicianPage() {
       : statusFilter === "IN PROGRESS"
       ? "In Progress Work"
       : "Completed Work";
+
+  const emptyState = getTechnicianEmptyState();
 
   return (
     <>
@@ -1152,6 +1190,86 @@ export default function TechnicianPage() {
           line-height: 1.8;
         }
 
+        .empty-state {
+          min-height: 320px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 34px 24px;
+          border: 1px dashed #d7e2f0;
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at top, rgba(37, 99, 235, 0.08), transparent 48%),
+            linear-gradient(180deg, #fcfdff 0%, #f7faff 100%);
+        }
+
+        .empty-state-art {
+          width: 82px;
+          height: 82px;
+          border-radius: 24px;
+          background: linear-gradient(145deg, #ffffff 0%, #eef5ff 100%);
+          border: 1px solid #d8e5f6;
+          box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+          display: grid;
+          place-items: center;
+          margin-bottom: 20px;
+        }
+
+        .empty-state-glyph {
+          width: 40px;
+          height: 40px;
+          border-radius: 14px;
+          border: 2px solid #8fb3e8;
+          position: relative;
+          background: linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
+        }
+
+        .empty-state-glyph::before,
+        .empty-state-glyph::after {
+          content: "";
+          position: absolute;
+          left: 8px;
+          right: 8px;
+          height: 2px;
+          border-radius: 999px;
+          background: #8fb3e8;
+        }
+
+        .empty-state-glyph::before {
+          top: 12px;
+        }
+
+        .empty-state-glyph::after {
+          top: 21px;
+          right: 14px;
+        }
+
+        .empty-state-eyebrow {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #2563eb;
+          margin-bottom: 8px;
+        }
+
+        .empty-state-title {
+          font-size: 24px;
+          line-height: 1.2;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 10px;
+        }
+
+        .empty-state-text {
+          max-width: 420px;
+          color: #64748b;
+          font-size: 15px;
+          line-height: 1.8;
+        }
+
         @media (max-width: 1250px) {
           .summary-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1250,7 +1368,14 @@ export default function TechnicianPage() {
               {loading ? (
                 <div className="empty-note">Loading your assignments...</div>
               ) : filteredIssues.length === 0 ? (
-                <div className="empty-note">No issues in this section.</div>
+                <div className="empty-state">
+                  <div className="empty-state-art">
+                    <div className="empty-state-glyph" />
+                  </div>
+                  <div className="empty-state-eyebrow">{emptyState.eyebrow}</div>
+                  <div className="empty-state-title">{emptyState.title}</div>
+                  <div className="empty-state-text">{emptyState.description}</div>
+                </div>
               ) : (
                 filteredIssues.map((issue) => {
                   const latestAdminAlert = getAdminAlerts(issue)[0];
@@ -1568,7 +1693,17 @@ export default function TechnicianPage() {
                 </div>
               </>
             ) : (
-              <div className="empty-note">Select an issue to view details</div>
+              <div className="empty-state">
+                <div className="empty-state-art">
+                  <div className="empty-state-glyph" />
+                </div>
+                <div className="empty-state-eyebrow">Ready to work</div>
+                <div className="empty-state-title">Select an issue to view details</div>
+                <div className="empty-state-text">
+                  Choose an assigned ticket from the queue to review the issue, communicate
+                  with admin, and move the work through your technician flow.
+                </div>
+              </div>
             )}
           </div>
         </div>
