@@ -34,6 +34,14 @@ function AdminBookingsPage() {
     fetchAllBookings();
   }, []);
 
+  const analytics = {
+    total: bookings.length,
+    pending: bookings.filter((b) => b.status === "PENDING").length,
+    approved: bookings.filter((b) => b.status === "APPROVED").length,
+    rejected: bookings.filter((b) => b.status === "REJECTED").length,
+    cancelled: bookings.filter((b) => b.status === "CANCELLED").length,
+  };
+
   const handleReasonChange = (bookingId, value) => {
     setDecisionInputs((prev) => ({
       ...prev,
@@ -150,6 +158,27 @@ function AdminBookingsPage() {
     };
   };
 
+  const analyticsCardStyle = {
+    backgroundColor: "#ffffff",
+    borderRadius: "20px",
+    padding: "20px",
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
+    border: "1px solid #eef2f7",
+  };
+
+  const analyticsNumberStyle = {
+    fontSize: "30px",
+    fontWeight: "800",
+    color: "#0f172a",
+    marginTop: "8px",
+  };
+
+  const analyticsLabelStyle = {
+    color: "#64748b",
+    fontSize: "14px",
+    fontWeight: "600",
+  };
+
   const detailCardStyle = {
     backgroundColor: "#f8fafc",
     borderRadius: "14px",
@@ -236,6 +265,49 @@ function AdminBookingsPage() {
               }}
             >
               Total: {bookings.length}
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Analytics Cards */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "18px",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={analyticsCardStyle}>
+            <div style={analyticsLabelStyle}>Total Bookings</div>
+            <div style={analyticsNumberStyle}>{analytics.total}</div>
+          </div>
+
+          <div style={analyticsCardStyle}>
+            <div style={analyticsLabelStyle}>Pending</div>
+            <div style={{ ...analyticsNumberStyle, color: "#d97706" }}>
+              {analytics.pending}
+            </div>
+          </div>
+
+          <div style={analyticsCardStyle}>
+            <div style={analyticsLabelStyle}>Approved</div>
+            <div style={{ ...analyticsNumberStyle, color: "#16a34a" }}>
+              {analytics.approved}
+            </div>
+          </div>
+
+          <div style={analyticsCardStyle}>
+            <div style={analyticsLabelStyle}>Rejected</div>
+            <div style={{ ...analyticsNumberStyle, color: "#6b7280" }}>
+              {analytics.rejected}
+            </div>
+          </div>
+
+          <div style={analyticsCardStyle}>
+            <div style={analyticsLabelStyle}>Cancelled</div>
+            <div style={{ ...analyticsNumberStyle, color: "#dc2626" }}>
+              {analytics.cancelled}
             </div>
           </div>
         </div>
@@ -416,7 +488,9 @@ function AdminBookingsPage() {
 
                   <div style={detailCardStyle}>
                     <div style={detailLabelStyle}>Expected Attendees</div>
-                    <div style={detailValueStyle}>{booking.expectedAttendees}</div>
+                    <div style={detailValueStyle}>
+                      {booking.expectedAttendees}
+                    </div>
                   </div>
 
                   <div style={detailCardStyle}>
@@ -426,7 +500,9 @@ function AdminBookingsPage() {
 
                   <div style={detailCardStyle}>
                     <div style={detailLabelStyle}>Admin Reason</div>
-                    <div style={detailValueStyle}>{booking.adminReason || "-"}</div>
+                    <div style={detailValueStyle}>
+                      {booking.adminReason || "-"}
+                    </div>
                   </div>
                 </div>
 
