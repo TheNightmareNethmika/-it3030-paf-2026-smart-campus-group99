@@ -22,7 +22,7 @@ const AUTOFILL_TEMPLATES = {
     location: 'Building A, Floor 1',
     availableStartTime: '08:00',
     availableEndTime: '22:00',
-    status: 'WORKING',
+    status: 'AVAILABLE',
     description: 'Large lecture hall with projector and audio system'
   },
   COMPUTER_LAB: {
@@ -31,7 +31,7 @@ const AUTOFILL_TEMPLATES = {
     location: 'Building B, Floor 2',
     availableStartTime: '09:00',
     availableEndTime: '18:00',
-    status: 'WORKING',
+    status: 'AVAILABLE',
     description: 'Computer lab with 30 workstations and internet access'
   },
   MEETING_ROOM: {
@@ -40,7 +40,7 @@ const AUTOFILL_TEMPLATES = {
     location: 'Building C, Floor 3',
     availableStartTime: '08:00',
     availableEndTime: '17:00',
-    status: 'WORKING',
+    status: 'AVAILABLE',
     description: 'Meeting room with whiteboard and video conferencing'
   },
   PROJECTOR: {
@@ -49,7 +49,7 @@ const AUTOFILL_TEMPLATES = {
     location: 'AV Department',
     availableStartTime: '07:00',
     availableEndTime: '23:00',
-    status: 'WORKING',
+    status: 'AVAILABLE',
     description: 'Portable projector with HDMI connection'
   },
   CAMERA: {
@@ -58,7 +58,7 @@ const AUTOFILL_TEMPLATES = {
     location: 'Media Center',
     availableStartTime: '08:00',
     availableEndTime: '20:00',
-    status: 'WORKING',
+    status: 'AVAILABLE',
     description: 'Professional digital camera for events'
   }
 }
@@ -412,9 +412,11 @@ function ResourceFormPage() {
               >
                 <option value="">Select</option>
                 <option value="LECTURE_HALL">Lecture Hall</option>
-                <option value="COMPUTER_LAB">Computer Lab</option>
+                <option value="LAB">Lab</option>
                 <option value="MEETING_ROOM">Meeting Room</option>
                 <option value="PROJECTOR">Projector</option>
+                <option value="CAMERA">Camera</option>
+                <option value="OTHER">Other</option>
                 <option value="CAMERA">Camera</option>
               </select>
               {fieldError('type') && <small>{fieldError('type')}</small>}
@@ -482,8 +484,10 @@ function ResourceFormPage() {
                 onChange={handleChange}
               >
                 <option value="">Select</option>
-                <option value="WORKING">Working</option>
-                <option value="OUT_OF_SERVICE">Out of Service</option>
+                <option value="AVAILABLE">Available</option>
+                <option value="BUSY">Busy</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="OUT_OF_ORDER">Out of Order</option>
               </select>
               {fieldError('status') && <small>{fieldError('status')}</small>}
             </div>

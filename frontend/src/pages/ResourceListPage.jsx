@@ -5,26 +5,29 @@ import '../styles/ResourceListPage.css'
 
 const TYPE_LABELS = {
   LECTURE_HALL: 'Lecture Hall',
-  COMPUTER_LAB: 'Computer Lab',
+  LAB: 'Lab',
   MEETING_ROOM: 'Meeting Room',
   PROJECTOR: 'Projector',
   CAMERA: 'Camera',
+  OTHER: 'Other',
 }
 
 const TYPE_ICONS = {
   LECTURE_HALL: '🏛️',
-  COMPUTER_LAB: '💻',
+  LAB: '💻',
   MEETING_ROOM: '🤝',
   PROJECTOR: '📽️',
   CAMERA: '📷',
+  OTHER: '📦',
 }
 
 const TYPE_COLORS = {
   LECTURE_HALL: '#3B82F6',
-  COMPUTER_LAB: '#10B981',
+  LAB: '#10B981',
   MEETING_ROOM: '#8B5CF6',
   PROJECTOR: '#F59E0B',
   CAMERA: '#EF4444',
+  OTHER: '#6B7280',
 }
 
 function ResourceListPage() {
@@ -162,7 +165,7 @@ function ResourceListPage() {
         }>
           <option value="">All Types</option>
           <option value="LECTURE_HALL">Lecture Hall</option>
-          <option value="COMPUTER_LAB">Computer Lab</option>
+          <option value="LAB">Lab</option>
           <option value="MEETING_ROOM">Meeting Room</option>
         </select>
 
