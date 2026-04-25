@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'http://localhost:8080/api'
+const BASE_URL = 'http://localhost:8081/api'
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -8,6 +8,18 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Request interceptor - attach JWT token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 // Response interceptor - extract user-friendly error
 apiClient.interceptors.response.use(
@@ -24,11 +36,19 @@ export const resourceApi = {
   create: (data) => apiClient.post('/resources', data),
   update: (id, data) => apiClient.put(`/resources/${id}`, data),
   delete: (id) => apiClient.delete(`/resources/${id}`),
-  
-  // Advanced search endpoints
-  advancedSearch: (searchRequest) => apiClient.post('/resources/search/advanced', searchRequest),
-  getSearchSuggestions: (query) => apiClient.get('/resources/search/suggestions', { params: { query } }),
-  parseQuery: (query) => apiClient.get('/resources/search/parse', { params: { query } }),
+
+  // Maps advanced search to the existing filter endpoint
+  advancedSearch: ({ query, type, status, location, minCapacity } = {}) =>
+    apiClient.get('/resources', {
+      params: {
+        ...(type && { type }),
+        ...(status && { status }),
+        ...(location && { location }),
+        ...(minCapacity && { minCapacity }),
+      },
+    }),
+  getSearchSuggestions: () => Promise.resolve({ data: [] }),
+  parseQuery: () => Promise.resolve({ data: {} }),
 }
 
 export default apiClient
