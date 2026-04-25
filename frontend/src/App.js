@@ -11,6 +11,8 @@ import UserProfile from './pages/UserProfile';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import AccessDenied from './pages/AccessDenied';
 import ProtectedRoute from './components/ProtectedRoute';
+import ResourceListPage from './pages/ResourceListPage';
+import ResourceFormPage from './pages/ResourceFormPage';
 
 function App() {
   return (
@@ -46,6 +48,24 @@ function App() {
             path="/profile" 
             element={<ProtectedRoute allowedRoles={['USER', 'ADMIN', 'TECHNICIAN']}><UserProfile /></ProtectedRoute>} 
           />
+          {/* Member-1: Resource Management Routes */}
+          <Route 
+            path="/resources" 
+            element={<ProtectedRoute allowedRoles={['ADMIN']}><ResourceListPage /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/admin/resources" 
+            element={<ProtectedRoute allowedRoles={['ADMIN']}><ResourceListPage /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/resources/add" 
+            element={<ProtectedRoute allowedRoles={['ADMIN']}><ResourceFormPage /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/resources/edit/:id" 
+            element={<ProtectedRoute allowedRoles={['ADMIN']}><ResourceFormPage /></ProtectedRoute>} 
+          />
+
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
           <Route path="/access-denied" element={<AccessDenied />} />
         </Routes>
