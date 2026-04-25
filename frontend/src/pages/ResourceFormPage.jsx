@@ -14,6 +14,55 @@ const INITIAL_FORM = {
   description: '',
 }
 
+// AUTOFILL TEMPLATES
+const AUTOFILL_TEMPLATES = {
+  LECTURE_HALL: {
+    name: 'Main Lecture Hall',
+    capacity: '200',
+    location: 'Building A, Floor 1',
+    availableStartTime: '08:00',
+    availableEndTime: '22:00',
+    status: 'WORKING',
+    description: 'Large lecture hall with projector and audio system'
+  },
+  COMPUTER_LAB: {
+    name: 'Computer Lab',
+    capacity: '30',
+    location: 'Building B, Floor 2',
+    availableStartTime: '09:00',
+    availableEndTime: '18:00',
+    status: 'WORKING',
+    description: 'Computer lab with 30 workstations and internet access'
+  },
+  MEETING_ROOM: {
+    name: 'Conference Room',
+    capacity: '15',
+    location: 'Building C, Floor 3',
+    availableStartTime: '08:00',
+    availableEndTime: '17:00',
+    status: 'WORKING',
+    description: 'Meeting room with whiteboard and video conferencing'
+  },
+  PROJECTOR: {
+    name: 'Portable Projector',
+    capacity: '1',
+    location: 'AV Department',
+    availableStartTime: '07:00',
+    availableEndTime: '23:00',
+    status: 'WORKING',
+    description: 'Portable projector with HDMI connection'
+  },
+  CAMERA: {
+    name: 'Digital Camera',
+    capacity: '1',
+    location: 'Media Center',
+    availableStartTime: '08:00',
+    availableEndTime: '20:00',
+    status: 'WORKING',
+    description: 'Professional digital camera for events'
+  }
+}
+
 function ResourceFormPage() {
   const { id } = useParams()
   const isEdit = Boolean(id)
@@ -62,10 +111,11 @@ function ResourceFormPage() {
   const handleChange = (e) => {
     const { name, value } = e.target
 
-    // Restrict capacity field to numbers and symbols only
+    // Allow symbols and negative numbers in capacity field
     let processedValue = value
     if (name === 'capacity') {
-      processedValue = value.replace(/[^0-9+\-*/.()=]/g, '')
+      // Allow numbers, mathematical symbols, and negative numbers
+      processedValue = value.replace(/[^0-9+\-*/.()=-]/g, '')
     }
 
     setForm((prev) => ({
@@ -83,10 +133,9 @@ function ResourceFormPage() {
     if (!form.name.trim()) errs.name = 'Resource name is required.'
     if (!form.type) errs.type = 'Select resource type.'
     if (!form.capacity) errs.capacity = 'Capacity is required.'
-    if (form.capacity && !/^[0-9+\-*/.()=]+$/.test(form.capacity)) {
-      errs.capacity = 'Capacity can only contain numbers and mathematical symbols (+ - * / . ( ) =)'
+    if (form.capacity && !/^[0-9+\-*/.()=-]+$/.test(form.capacity)) {
+      errs.capacity = 'Capacity can contain numbers, symbols (+ - * / . ( ) =) and negative values'
     }
-    if (Number(form.capacity) < 1) errs.capacity = 'Minimum capacity is 1.'
     if (!form.location.trim()) errs.location = 'Location is required.'
     if (!form.availableStartTime)
       errs.availableStartTime = 'Start time required.'
@@ -157,6 +206,22 @@ function ResourceFormPage() {
   }
 
   const fieldError = (field) => errors[field] || serverErrors[field]
+
+  // AUTOFILL FUNCTION
+  const handleAutofill = (resourceType) => {
+    const template = AUTOFILL_TEMPLATES[resourceType]
+    if (template) {
+      setForm(prev => ({
+        ...prev,
+        ...template,
+        type: resourceType
+      }))
+      setErrors({})
+      setServerErrors({})
+      setSuccessMsg(`Form autofilled with ${resourceType.replace('_', ' ')} template`)
+      setTimeout(() => setSuccessMsg(null), 2000)
+    }
+  }
 
   // Availability checking function
   const checkAvailability = async () => {
@@ -278,6 +343,53 @@ function ResourceFormPage() {
             <p>Please complete all required fields.</p>
           </div>
 
+          {/* AUTOFILL SECTION */}
+          {!isEdit && (
+            <div className="autofill-section">
+              <div className="autofill-header">
+                <h3>⚡ Quick Fill Templates</h3>
+                <p>Click any template to auto-fill the form with common resource configurations</p>
+              </div>
+              <div className="autofill-buttons">
+                <button
+                  type="button"
+                  className="autofill-btn lecture-hall"
+                  onClick={() => handleAutofill('LECTURE_HALL')}
+                >
+                  🏛️ Lecture Hall
+                </button>
+                <button
+                  type="button"
+                  className="autofill-btn computer-lab"
+                  onClick={() => handleAutofill('COMPUTER_LAB')}
+                >
+                  💻 Computer Lab
+                </button>
+                <button
+                  type="button"
+                  className="autofill-btn meeting-room"
+                  onClick={() => handleAutofill('MEETING_ROOM')}
+                >
+                  🤝 Meeting Room
+                </button>
+                <button
+                  type="button"
+                  className="autofill-btn projector"
+                  onClick={() => handleAutofill('PROJECTOR')}
+                >
+                  📽️ Projector
+                </button>
+                <button
+                  type="button"
+                  className="autofill-btn camera"
+                  onClick={() => handleAutofill('CAMERA')}
+                >
+                  📷 Camera
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid-layout">
             <div className="field wide">
               <label>Resource Name</label>
@@ -311,11 +423,11 @@ function ResourceFormPage() {
             <div className="field">
               <label>Capacity</label>
               <input
-                type="number"
+                type="text"
                 name="capacity"
                 value={form.capacity}
                 onChange={handleChange}
-                placeholder="50"
+                placeholder="50 or -1 or 10+5"
               />
               {fieldError('capacity') && (
                 <small>{fieldError('capacity')}</small>

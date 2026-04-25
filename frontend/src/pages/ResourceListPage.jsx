@@ -94,6 +94,11 @@ function ResourceListPage() {
     }
   }
 
+  const handleBooking = (resource) => {
+    setSuccessMsg(`Booking initiated for "${resource.name}". Please contact admin to confirm.`)
+    setTimeout(() => setSuccessMsg(null), 3000)
+  }
+
   const clearFilters = () => {
     setSearchFilters({
       name: '',
@@ -207,6 +212,12 @@ function ResourceListPage() {
               <p>Status: {r.status}</p>
 
               <div className="actions">
+                <button onClick={() =>
+                  handleBooking(r)
+                }>
+                  📅 Book
+                </button>
+
                 <button onClick={() =>
                   navigate(`/resources/edit/${r.id}`)
                 }>

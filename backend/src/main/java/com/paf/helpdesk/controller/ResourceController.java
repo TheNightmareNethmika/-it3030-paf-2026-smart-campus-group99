@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -26,6 +27,9 @@ public class ResourceController {
     private final ResourceService resourceService;
     private final SmartSearchService smartSearchService;
 
+    // =========================
+    // 1. GET ALL / FILTER
+    // =========================
     @GetMapping
     public ResponseEntity<List<ResourceResponseDTO>> getAllResources(
             @RequestParam(required = false) String name,
@@ -33,67 +37,152 @@ public class ResourceController {
             @RequestParam(required = false) ResourceStatus status,
             @RequestParam(required = false) Integer minCapacity) {
 
+        List<ResourceResponseDTO> result;
+
         if (name != null || type != null || status != null || minCapacity != null) {
-            return ResponseEntity.ok(resourceService.searchResources(name, type, status, minCapacity));
+            result = resourceService.searchResources(name, type, status, minCapacity);
+        } else {
+            result = resourceService.getAllResources();
         }
-        return ResponseEntity.ok(resourceService.getAllResources());
+
+        return ResponseEntity.ok(result);
     }
 
+    // =========================
+    // 2. GET BY ID (FIXED ❌500 FIX)
+    // =========================
     @GetMapping("/{id}")
-    public ResponseEntity<ResourceResponseDTO> getResourceById(@PathVariable Long id) {
-        return ResponseEntity.ok(resourceService.getResourceById(id));
+    public ResponseEntity<?> getResourceById(@PathVariable Long id) {
+
+        try {
+            ResourceResponseDTO resource = resourceService.getResourceById(id);
+
+            if (resource == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Resource not found"));
+            }
+
+            return ResponseEntity.ok(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Internal Server Error",
+                            "message", e.getMessage()
+                    ));
+        }
     }
 
+    // =========================
+    // 3. CREATE RESOURCE
+    // =========================
     @PostMapping
-    public ResponseEntity<ResourceResponseDTO> createResource(@Valid @RequestBody ResourceRequestDTO dto) {
-        ResourceResponseDTO created = resourceService.createResource(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<?> createResource(@Valid @RequestBody ResourceRequestDTO dto) {
+        try {
+            ResourceResponseDTO created = resourceService.createResource(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Create failed", "error", e.getMessage()));
+        }
     }
 
+    // =========================
+    // 4. UPDATE RESOURCE
+    // =========================
     @PutMapping("/{id}")
-    public ResponseEntity<ResourceResponseDTO> updateResource(
+    public ResponseEntity<?> updateResource(
             @PathVariable Long id,
             @Valid @RequestBody ResourceRequestDTO dto) {
-        return ResponseEntity.ok(resourceService.updateResource(id, dto));
-    }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteResource(@PathVariable Long id) {
-        resourceService.deleteResource(id);
-        return ResponseEntity.ok(Map.of("message", "Resource deleted successfully"));
-    }
+        try {
+            ResourceResponseDTO updated = resourceService.updateResource(id, dto);
+            return ResponseEntity.ok(updated);
 
-    // Advanced Search Endpoints
-    @PostMapping("/search/advanced")
-    public ResponseEntity<List<ResourceResponseDTO>> advancedSearch(@Valid @RequestBody AdvancedSearchRequestDTO searchRequest) {
-        // Parse natural language query if provided
-        if (searchRequest.getQuery() != null && !searchRequest.getQuery().trim().isEmpty()) {
-            AdvancedSearchRequestDTO parsedRequest = smartSearchService.parseNaturalLanguageQuery(searchRequest.getQuery());
-            // Merge parsed request with original request
-            if (searchRequest.getName() == null) searchRequest.setName(parsedRequest.getName());
-            if (searchRequest.getType() == null) searchRequest.setType(parsedRequest.getType());
-            if (searchRequest.getStatus() == null) searchRequest.setStatus(parsedRequest.getStatus());
-            if (searchRequest.getLocation() == null) searchRequest.setLocation(parsedRequest.getLocation());
-            if (searchRequest.getMinCapacity() == null) searchRequest.setMinCapacity(parsedRequest.getMinCapacity());
-            if (searchRequest.getMaxCapacity() == null) searchRequest.setMaxCapacity(parsedRequest.getMaxCapacity());
-            if (searchRequest.getAvailableFrom() == null) searchRequest.setAvailableFrom(parsedRequest.getAvailableFrom());
-            if (searchRequest.getAvailableTo() == null) searchRequest.setAvailableTo(parsedRequest.getAvailableTo());
-            if (searchRequest.getTimeOfDay() == null) searchRequest.setTimeOfDay(parsedRequest.getTimeOfDay());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Update failed", "error", e.getMessage()));
         }
-
-        List<ResourceResponseDTO> results = resourceService.advancedSearch(searchRequest);
-        return ResponseEntity.ok(results);
     }
 
+    // =========================
+    // 5. DELETE RESOURCE (FIXED)
+    // =========================
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteResource(@PathVariable Long id) {
+
+        try {
+            resourceService.deleteResource(id);
+
+            return ResponseEntity.ok(
+                    Map.of("message", "Resource deleted successfully")
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "message", "Delete failed",
+                            "error", e.getMessage()
+                    ));
+        }
+    }
+
+    // =========================
+    // 6. ADVANCED SEARCH
+    // =========================
+    @PostMapping("/search/advanced")
+    public ResponseEntity<?> advancedSearch(
+            @Valid @RequestBody AdvancedSearchRequestDTO searchRequest) {
+
+        try {
+
+            if (searchRequest.getQuery() != null && !searchRequest.getQuery().trim().isEmpty()) {
+
+                AdvancedSearchRequestDTO parsed =
+                        smartSearchService.parseNaturalLanguageQuery(searchRequest.getQuery());
+
+                if (parsed != null) {
+                    if (searchRequest.getName() == null) searchRequest.setName(parsed.getName());
+                    if (searchRequest.getType() == null) searchRequest.setType(parsed.getType());
+                    if (searchRequest.getStatus() == null) searchRequest.setStatus(parsed.getStatus());
+                    if (searchRequest.getLocation() == null) searchRequest.setLocation(parsed.getLocation());
+                    if (searchRequest.getMinCapacity() == null) searchRequest.setMinCapacity(parsed.getMinCapacity());
+                    if (searchRequest.getMaxCapacity() == null) searchRequest.setMaxCapacity(parsed.getMaxCapacity());
+                    if (searchRequest.getAvailableFrom() == null) searchRequest.setAvailableFrom(parsed.getAvailableFrom());
+                    if (searchRequest.getAvailableTo() == null) searchRequest.setAvailableTo(parsed.getAvailableTo());
+                    if (searchRequest.getTimeOfDay() == null) searchRequest.setTimeOfDay(parsed.getTimeOfDay());
+                }
+            }
+
+            List<ResourceResponseDTO> results =
+                    resourceService.advancedSearch(searchRequest);
+
+            return ResponseEntity.ok(results);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Search failed",
+                            "message", e.getMessage()
+                    ));
+        }
+    }
+
+    // =========================
+    // 7. SEARCH SUGGESTIONS
+    // =========================
     @GetMapping("/search/suggestions")
-    public ResponseEntity<List<SearchSuggestionDTO>> getSearchSuggestions(@RequestParam String query) {
-        List<SearchSuggestionDTO> suggestions = resourceService.getSearchSuggestions(query);
-        return ResponseEntity.ok(suggestions);
+    public ResponseEntity<?> getSearchSuggestions(@RequestParam String query) {
+        return ResponseEntity.ok(resourceService.getSearchSuggestions(query));
     }
 
+    // =========================
+    // 8. PARSE QUERY
+    // =========================
     @GetMapping("/search/parse")
-    public ResponseEntity<AdvancedSearchRequestDTO> parseQuery(@RequestParam String query) {
-        AdvancedSearchRequestDTO parsedRequest = smartSearchService.parseNaturalLanguageQuery(query);
-        return ResponseEntity.ok(parsedRequest);
+    public ResponseEntity<?> parseQuery(@RequestParam String query) {
+        return ResponseEntity.ok(
+                smartSearchService.parseNaturalLanguageQuery(query)
+        );
     }
 }
