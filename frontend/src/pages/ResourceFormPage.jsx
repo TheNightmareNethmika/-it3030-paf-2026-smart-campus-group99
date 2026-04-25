@@ -25,7 +25,7 @@ const AUTOFILL_TEMPLATES = {
     status: 'AVAILABLE',
     description: 'Large lecture hall with projector and audio system'
   },
-  COMPUTER_LAB: {
+  LAB: {
     name: 'Computer Lab',
     capacity: '30',
     location: 'Building B, Floor 2',
@@ -361,9 +361,9 @@ function ResourceFormPage() {
                 <button
                   type="button"
                   className="autofill-btn computer-lab"
-                  onClick={() => handleAutofill('COMPUTER_LAB')}
+                  onClick={() => handleAutofill('LAB')}
                 >
-                  💻 Computer Lab
+                  💻 Lab
                 </button>
                 <button
                   type="button"
