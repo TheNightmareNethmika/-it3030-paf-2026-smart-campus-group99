@@ -18,7 +18,7 @@ import java.util.Optional;
 @Component
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3000");
+    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3100");
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;

@@ -35,7 +35,7 @@ const AdminDashboard = () => {
     const [userCount, setUserCount] = useState(null);
 
     useEffect(() => {
-        api.get('/admin/users')
+        api.get('/api/admin/users')
             .then(({ data }) => setUserCount(data.length))
             .catch(() => setUserCount('—'));
     }, []);

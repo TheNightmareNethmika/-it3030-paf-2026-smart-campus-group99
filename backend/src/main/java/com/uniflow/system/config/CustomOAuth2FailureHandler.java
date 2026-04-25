@@ -14,7 +14,7 @@ import java.io.IOException;
 @Component
 public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler {
 
-    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3000");
+    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3100");
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,

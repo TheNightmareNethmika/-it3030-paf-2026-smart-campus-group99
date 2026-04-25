@@ -19,11 +19,10 @@ const ResourceFilters = ({ filters, setFilters }) => {
         >
           <option value="">All Types</option>
           <option value="LECTURE_HALL">Lecture Hall</option>
-          <option value="LAB">Lab</option>
+          <option value="COMPUTER_LAB">Computer Lab</option>
           <option value="MEETING_ROOM">Meeting Room</option>
           <option value="PROJECTOR">Projector</option>
           <option value="CAMERA">Camera</option>
-          <option value="OTHER">Other</option>
         </select>
       </div>
 
@@ -63,10 +62,8 @@ const ResourceFilters = ({ filters, setFilters }) => {
           className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Statuses</option>
-          <option value="AVAILABLE">Available</option>
-          <option value="BUSY">Busy</option>
-          <option value="MAINTENANCE">Maintenance</option>
-          <option value="OUT_OF_ORDER">Out of Order</option>
+          <option value="WORKING">In service</option>
+          <option value="OUT_OF_SERVICE">Out of service</option>
         </select>
       </div>
     </div>

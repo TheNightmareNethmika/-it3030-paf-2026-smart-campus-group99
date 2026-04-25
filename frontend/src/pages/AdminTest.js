@@ -14,7 +14,7 @@ const AdminTest = () => {
         setResult('');
 
         try {
-            const response = await api.get('/admin/test');
+            const response = await api.get('/api/admin/test');
 
             console.log('Admin test response:', response.data);
             setResult(typeof response.data === 'string' ? response.data : JSON.stringify(response.data));
@@ -42,7 +42,7 @@ const AdminTest = () => {
                     <div className="p-10 bg-slate-900/5 rounded-2xl border border-slate-200 mb-8">
                         <h4 className="mb-6 text-xl font-bold text-slate-800 tracking-tight">Protected API Test</h4>
                         <p className="text-sm text-slate-500 mb-8">
-                            Click the button below to test the protected <code className="bg-slate-200 px-1.5 py-0.5 rounded">GET /admin/test</code> endpoint using your JWT token.
+                            Click the button below to test the protected <code className="bg-slate-200 px-1.5 py-0.5 rounded">GET /api/admin/test</code> endpoint using your JWT token.
                         </p>
                         
                         <button 

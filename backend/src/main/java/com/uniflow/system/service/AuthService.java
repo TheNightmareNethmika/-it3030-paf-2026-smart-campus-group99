@@ -16,6 +16,9 @@ public class AuthService {
     }
 
     public User register(User user) {
+        if (user.getEmail() != null) {
+            user.setEmail(user.getEmail().trim().toLowerCase());
+        }
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
@@ -23,19 +26,28 @@ public class AuthService {
     }
 
     public Optional<User> login(String email, String password) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (user.getPassword().equals(password)) {
-                return Optional.of(user);
-            }
+        if (email == null || password == null) {
+            return Optional.empty();
         }
-        
+        String normalizedEmail = email.trim().toLowerCase();
+        String trimmedPassword = password.trim();
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(normalizedEmail);
+
+        if (userOptional.isEmpty()) {
+            return Optional.empty();
+        }
+        User user = userOptional.get();
+        String stored = user.getPassword();
+        if (stored != null && stored.trim().equals(trimmedPassword)) {
+            return Optional.of(user);
+        }
         return Optional.empty();
     }
 
     public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        if (email == null) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmailIgnoreCase(email.trim().toLowerCase());
     }
 }

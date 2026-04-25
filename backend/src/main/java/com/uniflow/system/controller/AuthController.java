@@ -1,8 +1,10 @@
 package com.uniflow.system.controller;
 
+import com.uniflow.system.dto.LoginRequest;
 import com.uniflow.system.model.User;
 import com.uniflow.system.service.AuthService;
 import com.uniflow.system.config.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,9 +29,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Object login(@RequestBody User user) {
+    public Object login(@RequestBody LoginRequest request) {
 
-        Optional<User> found = authService.login(user.getEmail(), user.getPassword());
+        Optional<User> found = authService.login(request.getEmail(), request.getPassword());
 
         if (found.isPresent()) {
             User u = found.get();
@@ -37,14 +39,15 @@ public class AuthController {
 
             java.util.Map<String, Object> response = new java.util.HashMap<>();
             response.put("token", token);
-            response.put("role", u.getRole());
+            response.put("role", u.getRole().name());
             response.put("name", u.getName() != null ? u.getName() : "Admin User");
             response.put("email", u.getEmail());
-            
+
             return response;
         }
 
-        return Map.of("message", "Invalid credentials");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Invalid email or password"));
     }
 
     @GetMapping("/me")

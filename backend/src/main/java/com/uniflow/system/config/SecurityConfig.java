@@ -16,7 +16,14 @@ import java.util.List;
 @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
 
-    private static final String FRONTEND_URL = System.getProperty("FRONTEND_URL", "http://localhost:3000");
+    private static final List<String> ALLOWED_ORIGINS = List.of(
+            System.getProperty("FRONTEND_URL", "http://localhost:3100"),
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3100",
+            "http://localhost:5173",
+            "http://localhost:5174"
+    );
 
     private final JwtFilter jwtFilter;
     private final com.uniflow.system.service.CustomOAuth2UserService customOAuth2UserService;
@@ -56,7 +63,7 @@ public class SecurityConfig {
                     "/favicon.ico",
                     "/error"
                 ).permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")
                 .requestMatchers("/user/**").hasRole("USER")
                 .anyRequest().authenticated()
@@ -87,7 +94,7 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of(FRONTEND_URL));
+        config.setAllowedOrigins(ALLOWED_ORIGINS);
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 

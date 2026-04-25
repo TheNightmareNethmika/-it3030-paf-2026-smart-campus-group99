@@ -36,6 +36,7 @@ target/
 node_modules/
 .env
 *.log
+.dev-server-port
 
 
 

@@ -5,8 +5,6 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import logoIcon from '../assets/uniflow-icon.svg';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081';
-
 const OAUTH_ERRORS = {
     oauth2: 'Google sign-in failed. Please try again or use email & password.',
     access_denied: 'You cancelled the Google sign-in. Please try again.',
@@ -142,7 +140,7 @@ const Login = () => {
                     </div>
 
                     <a
-                        href={`${API_BASE_URL}/oauth2/authorization/google`}
+                        href="/oauth2/authorization/google"
                         className="btn btn-outline w-full !py-2.5 !text-sm bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                     >
                         <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">

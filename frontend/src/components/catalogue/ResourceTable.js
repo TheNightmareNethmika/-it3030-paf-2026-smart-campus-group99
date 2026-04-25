@@ -3,10 +3,8 @@ import React from 'react';
 const ResourceTable = ({ resources, onEdit, onDelete }) => {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-100 text-emerald-700';
-      case 'BUSY': return 'bg-amber-100 text-amber-700';
-      case 'MAINTENANCE': return 'bg-blue-100 text-blue-700';
-      case 'OUT_OF_ORDER': return 'bg-rose-100 text-rose-700';
+      case 'WORKING': return 'bg-emerald-100 text-emerald-700';
+      case 'OUT_OF_SERVICE': return 'bg-rose-100 text-rose-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };

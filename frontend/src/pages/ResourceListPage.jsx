@@ -5,40 +5,37 @@ import AdminLayout from '../components/AdminLayout'
 
 const TYPE_LABELS = {
   LECTURE_HALL: 'Lecture Hall',
-  LAB: 'Lab',
+  COMPUTER_LAB: 'Computer Lab',
   MEETING_ROOM: 'Meeting Room',
   PROJECTOR: 'Projector',
   CAMERA: 'Camera',
-  OTHER: 'Other',
 }
 
 const TYPE_ICONS = {
   LECTURE_HALL: '🏛️',
-  LAB: '💻',
+  COMPUTER_LAB: '💻',
   MEETING_ROOM: '🤝',
   PROJECTOR: '📽️',
   CAMERA: '📷',
-  OTHER: '📦',
 }
 
 const TYPE_META = {
   LECTURE_HALL: { bg: 'bg-blue-100',   text: 'text-blue-700',   dot: 'bg-blue-500'   },
-  LAB:          { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  COMPUTER_LAB: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
   MEETING_ROOM: { bg: 'bg-violet-100',  text: 'text-violet-700',  dot: 'bg-violet-500'  },
   PROJECTOR:    { bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
   CAMERA:       { bg: 'bg-rose-100',    text: 'text-rose-700',    dot: 'bg-rose-500'    },
-  OTHER:        { bg: 'bg-slate-100',   text: 'text-slate-600',   dot: 'bg-slate-400'   },
 }
 
+const TYPE_FALLBACK = { bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' }
+
 const STATUS_META = {
-  AVAILABLE:    { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Available'   },
-  BUSY:         { bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500',   label: 'Busy'        },
-  MAINTENANCE:  { bg: 'bg-blue-100',    text: 'text-blue-700',    dot: 'bg-blue-500',    label: 'Maintenance' },
-  OUT_OF_ORDER: { bg: 'bg-rose-100',    text: 'text-rose-700',    dot: 'bg-rose-500',    label: 'Out of Order'},
+  WORKING:         { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'In service'   },
+  OUT_OF_SERVICE:  { bg: 'bg-rose-100',    text: 'text-rose-700',    dot: 'bg-rose-500',    label: 'Out of service' },
 }
 
 function TypeBadge({ type }) {
-  const m = TYPE_META[type] || TYPE_META.OTHER
+  const m = TYPE_META[type] || TYPE_FALLBACK
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${m.bg} ${m.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`}></span>
@@ -174,11 +171,10 @@ function ResourceListPage() {
           >
             <option value="">All Types</option>
             <option value="LECTURE_HALL">Lecture Hall</option>
-            <option value="LAB">Lab</option>
+            <option value="COMPUTER_LAB">Computer Lab</option>
             <option value="MEETING_ROOM">Meeting Room</option>
             <option value="PROJECTOR">Projector</option>
             <option value="CAMERA">Camera</option>
-            <option value="OTHER">Other</option>
           </select>
           <select
             value={statusFilter}
@@ -186,10 +182,8 @@ function ResourceListPage() {
             className="px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 transition-all font-medium text-slate-700"
           >
             <option value="">All Statuses</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="BUSY">Busy</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="OUT_OF_ORDER">Out of Order</option>
+            <option value="WORKING">In service</option>
+            <option value="OUT_OF_SERVICE">Out of service</option>
           </select>
           {(search || typeFilter || statusFilter) && (
             <button

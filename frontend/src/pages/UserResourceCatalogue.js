@@ -14,7 +14,7 @@ const UserResourceCatalogue = () => {
         type: '',
         minCapacity: '',
         location: '',
-        status: 'AVAILABLE' // Default to showing available items for students
+        status: 'WORKING' // Backend ResourceStatus: operational resources
     });
 
     const fetchResources = useCallback(async () => {
@@ -39,8 +39,8 @@ const UserResourceCatalogue = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'AVAILABLE': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-            case 'BUSY': return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'WORKING': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'OUT_OF_SERVICE': return 'bg-rose-50 text-rose-600 border-rose-100';
             default: return 'bg-slate-50 text-slate-400 border-slate-100';
         }
     };

@@ -60,9 +60,10 @@ const AdminUserManagement = () => {
         setLoading(true);
         setError('');
         try {
-            const { data } = await api.get('/admin/users');
+            const { data } = await api.get('/api/admin/users');
             setUsers(data);
-        } catch {
+        } catch (err) {
+            console.error('GET /api/admin/users', err?.response?.status, err?.response?.data);
             setError('Failed to fetch users. Access might be restricted.');
         } finally {
             setLoading(false);
@@ -97,7 +98,7 @@ const AdminUserManagement = () => {
     const handleRoleSave = async (userId, newRole) => {
         setSavingRole(userId);
         try {
-            await api.put(`/admin/users/${userId}/role`, { role: newRole });
+            await api.put(`/api/admin/users/${userId}/role`, { role: newRole });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
             setSuccess('User role updated successfully.');
         } catch {
@@ -110,7 +111,7 @@ const AdminUserManagement = () => {
 
     const handleDelete = async (id) => {
         try {
-            await api.delete(`/admin/users/${id}`);
+            await api.delete(`/api/admin/users/${id}`);
             setUsers(prev => prev.filter(u => u.id !== id));
             setSuccess('User account removed successfully.');
         } catch {
@@ -138,7 +139,7 @@ const AdminUserManagement = () => {
         setAddLoading(true);
         setAddErrors({});
         try {
-            const { data } = await api.post('/admin/users', {
+            const { data } = await api.post('/api/admin/users', {
                 name:     addForm.name.trim(),
                 email:    addForm.email.trim().toLowerCase(),
                 phone:    addForm.phone.trim() || null,

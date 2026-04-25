@@ -9,7 +9,7 @@ const ResourceForm = ({ resource, onSubmit, onCancel }) => {
     type: 'LECTURE_HALL',
     capacity: 1,
     location: '',
-    status: 'AVAILABLE'
+    status: 'WORKING'
   });
 
   const [availabilityWindows, setAvailabilityWindows] = useState([]);
@@ -237,12 +237,10 @@ const ResourceForm = ({ resource, onSubmit, onCancel }) => {
                     className={`w-full bg-slate-50 border ${getFieldError('type') ? 'border-rose-400 ring-2 ring-rose-50' : 'border-slate-100'} rounded-2xl py-2.5 px-4 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[var(--primary)] focus:bg-white text-xs font-semibold appearance-none`}
                   >
                     <option value="LECTURE_HALL">Lecture Hall</option>
-                    <option value="LAB">Laboratory</option>
+                    <option value="COMPUTER_LAB">Computer Lab</option>
                     <option value="MEETING_ROOM">Meeting Room</option>
                     <option value="PROJECTOR">Projector</option>
                     <option value="CAMERA">Camera</option>
-                    <option value="LAPTOP">Laptop</option>
-                    <option value="OTHER">Other</option>
                   </select>
                   {getFieldError('type') && <p className="text-[10px] text-rose-500 mt-1 ml-1 font-medium flex items-center gap-1"><AlertCircle size={10}/> {errors.type}</p>}
                 </div>
@@ -356,10 +354,8 @@ const ResourceForm = ({ resource, onSubmit, onCancel }) => {
                     onBlur={handleBlur}
                     className={`w-full bg-slate-50 border ${getFieldError('status') ? 'border-rose-400 ring-2 ring-rose-50' : 'border-slate-100'} rounded-2xl py-2.5 px-4 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-[var(--primary)] focus:bg-white text-xs font-semibold appearance-none`}
                   >
-                    <option value="AVAILABLE">Active (Available)</option>
-                    <option value="BUSY">Reserved</option>
-                    <option value="MAINTENANCE">Under Maintenance</option>
-                    <option value="OUT_OF_ORDER">Out of Service</option>
+                    <option value="WORKING">In service (operational)</option>
+                    <option value="OUT_OF_SERVICE">Out of service</option>
                   </select>
                   {getFieldError('status') && <p className="text-[10px] text-rose-500 mt-1 ml-1 font-medium flex items-center gap-1"><AlertCircle size={10}/> {errors.status}</p>}
                 </div>
