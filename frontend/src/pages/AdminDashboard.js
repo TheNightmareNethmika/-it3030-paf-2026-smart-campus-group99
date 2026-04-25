@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import AdminLayout from '../components/AdminLayout';
 
 const summaryCards = [
@@ -29,6 +31,15 @@ const summaryCards = [
 ];
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
+    const [userCount, setUserCount] = useState(null);
+
+    useEffect(() => {
+        api.get('/admin/users')
+            .then(({ data }) => setUserCount(data.length))
+            .catch(() => setUserCount('—'));
+    }, []);
+
     return (
         <AdminLayout>
             <div className="relative overflow-hidden animate-up">
@@ -88,16 +99,30 @@ const AdminDashboard = () => {
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full">Ready</span>
                         </div>
-                        <div className="p-8 grid sm:grid-cols-3 gap-4">
+                        <div className="p-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
-                                { title: 'Resource Management', text: 'Manage physical spaces, equipment, and campus inventory records.' },
-                                { title: 'Ticket Management', text: 'Track service issues, escalations, and operational response status.' },
-                                { title: 'Booking Management', text: 'Review demand, monitor daily bookings, and maintain availability.' }
+                                { title: 'Resource Management', text: 'Manage physical spaces, equipment, and campus inventory records.', path: '/admin/resources' },
+                                { title: 'Ticket Management',   text: 'Track service issues, escalations, and operational response status.', path: '/admin/tickets' },
+                                { title: 'Booking Management',  text: 'Review demand, monitor daily bookings, and maintain availability.', path: '/admin/bookings' },
+                                { title: 'User Management',     text: 'Manage member accounts, assign roles, and control platform access.', path: '/admin/users', highlight: true },
                             ].map((module) => (
-                                <div key={module.title} className="rounded-[1.5rem] border border-slate-100 bg-slate-50/60 p-5">
-                                    <h4 className="text-sm font-black text-slate-900 mb-2">{module.title}</h4>
+                                <button
+                                    key={module.title}
+                                    onClick={() => navigate(module.path)}
+                                    className={`rounded-[1.5rem] border p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                                        module.highlight
+                                            ? 'border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50'
+                                            : 'border-slate-100 bg-slate-50/60 hover:bg-slate-100/60'
+                                    }`}
+                                >
+                                    <h4 className={`text-sm font-black mb-2 ${module.highlight ? 'text-indigo-800' : 'text-slate-900'}`}>{module.title}</h4>
                                     <p className="text-xs leading-relaxed text-slate-500 font-medium">{module.text}</p>
-                                </div>
+                                    {module.highlight && (
+                                        <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                                            {userCount !== null ? `${userCount} members` : '—'}
+                                        </p>
+                                    )}
+                                </button>
                             ))}
                         </div>
                     </div>

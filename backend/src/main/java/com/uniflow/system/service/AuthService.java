@@ -1,5 +1,6 @@
 package com.uniflow.system.service;
 
+import com.uniflow.system.model.Role;
 import com.uniflow.system.model.User;
 import com.uniflow.system.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,9 @@ public class AuthService {
     }
 
     public User register(User user) {
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
         return userRepository.save(user);
     }
 
