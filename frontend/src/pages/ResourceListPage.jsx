@@ -215,7 +215,14 @@ function ResourceListPage() {
     return time.substring(0, 5)
   }
 
-  // Filter and sort resources
+  const handleBookingClick = (resource) => {
+    setSuccessMsg(`Booking initiated for "${resource.name}". Contact admin for details.`)
+    
+    setTimeout(() => {
+      setSuccessMsg(null)
+    }, 3000)
+  }
+
   const filteredAndSortedResources = resources
     .filter(resource => 
       resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -550,6 +557,15 @@ function ResourceListPage() {
 
                 <div className="resource-card-actions">
                   <button
+                    className="booking-card-btn"
+                    onClick={() =>
+                      handleBookingClick(resource)
+                    }
+                  >
+                    📅 Book
+                  </button>
+                  
+                  <button
                     onClick={() =>
                       navigate(
                         `/resources/edit/${resource.id}`
@@ -575,7 +591,7 @@ function ResourceListPage() {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* DELETE MODAL */}
       {deleteTarget && (
         <div className="modal-overlay">
           <div className="modal">
