@@ -463,6 +463,114 @@ body{
   to{transform:rotate(360deg)}
 }
 
+/* AVAILABILITY CHECKING */
+
+.availability-section{
+  background:var(--bg-50);
+  border:1px solid var(--border-200);
+  border-radius:12px;
+  padding:24px;
+  margin:24px 0;
+  animation:fadeInUp 0.5s ease;
+}
+
+.availability-header h3{
+  color:var(--text-900);
+  font-size:18px;
+  font-weight:600;
+  margin-bottom:8px;
+}
+
+.availability-header p{
+  color:var(--text-500);
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.availability-actions{
+  margin-bottom:16px;
+}
+
+.availability-check-btn{
+  background:linear-gradient(135deg,var(--primary-500),var(--primary-600));
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:12px 24px;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+
+.availability-check-btn:hover:not(:disabled){
+  background:linear-gradient(135deg,var(--primary-600),var(--primary-700));
+  transform:translateY(-2px);
+  box-shadow:0 8px 25px rgba(59,130,246,0.3);
+}
+
+.availability-check-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+  transform:none;
+}
+
+.availability-status{
+  padding:16px;
+  border-radius:8px;
+  margin-top:12px;
+  animation:slideIn 0.3s ease;
+}
+
+.availability-status.available{
+  background:var(--success-50);
+  border:1px solid var(--success-200);
+  color:var(--success-700);
+}
+
+.availability-status.unavailable{
+  background:var(--error-50);
+  border:1px solid var(--error-200);
+  color:var(--error-700);
+}
+
+.availability-status.error{
+  background:var(--warning-50);
+  border:1px solid var(--warning-200);
+  color:var(--warning-700);
+}
+
+.availability-status p{
+  margin:0;
+  font-size:14px;
+  font-weight:500;
+}
+
+@keyframes fadeInUp{
+  from{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@keyframes slideIn{
+  from{
+    opacity:0;
+    transform:translateX(-10px);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0);
+  }
+}
+
 /* MOBILE */
 
 @media(max-width:992px){

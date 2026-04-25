@@ -1,7 +1,9 @@
 package com.paf.helpdesk.service;
 
+import com.paf.helpdesk.dto.AdvancedSearchRequestDTO;
 import com.paf.helpdesk.dto.ResourceRequestDTO;
 import com.paf.helpdesk.dto.ResourceResponseDTO;
+import com.paf.helpdesk.dto.SearchSuggestionDTO;
 import com.paf.helpdesk.entity.Resource;
 import com.paf.helpdesk.entity.ResourceStatus;
 import com.paf.helpdesk.entity.ResourceType;
@@ -71,6 +73,72 @@ public class ResourceService {
                 .stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ResourceResponseDTO> advancedSearch(AdvancedSearchRequestDTO searchRequest) {
+        List<Resource> resources;
+
+        // Use multi-filter search if multiple types, statuses, or locations are specified
+        if ((searchRequest.getTypes() != null && !searchRequest.getTypes().isEmpty()) ||
+            (searchRequest.getStatuses() != null && !searchRequest.getStatuses().isEmpty()) ||
+            (searchRequest.getLocations() != null && !searchRequest.getLocations().isEmpty())) {
+            
+            resources = resourceRepository.multiFilterSearch(
+                searchRequest.getTypes(),
+                searchRequest.getStatuses(),
+                searchRequest.getLocations()
+            );
+        } else {
+            // Use advanced search with individual filters
+            resources = resourceRepository.advancedSearch(
+                searchRequest.getName(),
+                searchRequest.getType(),
+                searchRequest.getStatus(),
+                searchRequest.getLocation(),
+                searchRequest.getMinCapacity(),
+                searchRequest.getMaxCapacity(),
+                searchRequest.getAvailableFrom(),
+                searchRequest.getAvailableTo()
+            );
+        }
+
+        // Apply additional filtering for complex conditions
+        if (searchRequest.getTimeOfDay() != null) {
+            resources = resources.stream()
+                .filter(resource -> isAvailableDuringTimeOfDay(resource, searchRequest.getTimeOfDay()))
+                .collect(Collectors.toList());
+        }
+
+        return resources.stream()
+                .map(this::mapToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<SearchSuggestionDTO> getSearchSuggestions(String query) {
+        SmartSearchService smartSearchService = new SmartSearchService(resourceRepository);
+        return smartSearchService.getSearchSuggestions(query);
+    }
+
+    private boolean isAvailableDuringTimeOfDay(Resource resource, String timeOfDay) {
+        if (resource.getAvailableStartTime() == null || resource.getAvailableEndTime() == null) {
+            return true;
+        }
+
+        int startHour = resource.getAvailableStartTime().getHour();
+        int endHour = resource.getAvailableEndTime().getHour();
+
+        switch (timeOfDay.toLowerCase()) {
+            case "morning":
+                return startHour <= 12 && endHour >= 6;
+            case "afternoon":
+                return startHour <= 18 && endHour >= 12;
+            case "evening":
+                return startHour <= 22 && endHour >= 18;
+            case "night":
+                return (startHour <= 23 && endHour >= 22) || (startHour <= 6 && endHour >= 0);
+            default:
+                return true;
+        }
     }
 
     private void validateTimeRange(ResourceRequestDTO dto) {

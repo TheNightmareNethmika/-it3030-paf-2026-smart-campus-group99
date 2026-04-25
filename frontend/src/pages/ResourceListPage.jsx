@@ -32,613 +32,209 @@ function ResourceListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [, setDeleteLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('name')
   const [sortOrder, setSortOrder] = useState('asc')
 
-  /* PREMIUM STATES */
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem('resource_dark') === 'true'
-  )
-
-  const [favorites, setFavorites] = useState(
-    JSON.parse(
-      localStorage.getItem('resource_favs') || '[]'
-    )
-  )
+  const [searchFilters, setSearchFilters] = useState({
+    name: '',
+    type: '',
+    status: '',
+    location: '',
+    minCapacity: '',
+    maxCapacity: '',
+  })
 
   const navigate = useNavigate()
 
-  useEffect(() => {
-    localStorage.setItem(
-      'resource_dark',
-      darkMode
-    )
-  }, [darkMode])
-
-  useEffect(() => {
-    localStorage.setItem(
-      'resource_favs',
-      JSON.stringify(favorites)
-    )
-  }, [favorites])
-
-  const fetchResources = () => {
-    setLoading(true)
-    setError(null)
-
-    resourceApi
-      .getAll()
-      .then((res) => {
-        setResources(
-          res.data || res
-        )
-      })
-      .catch(() => {
-        setError(
-          'Failed to load resources.'
-        )
-      })
-      .finally(() =>
-        setLoading(false)
-      )
+  const fetchResources = async () => {
+    try {
+      setLoading(true)
+      const res = await resourceApi.getAll()
+      setResources(res.data || res)
+    } catch {
+      setError('Failed to load resources.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    let isMounted = true
-    const loadData = async () => {
-      if (!isMounted) return
-      setLoading(true)
-      setError(null)
-
-      try {
-        const res = await resourceApi.getAll()
-        if (isMounted) {
-          setResources(res.data || res)
-        }
-      } catch {
-        if (isMounted) {
-          setError('Failed to load resources.')
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    loadData()
-    const intervalId = setInterval(loadData, 10000)
-    return () => {
-      isMounted = false
-      clearInterval(intervalId)
-    }
+    fetchResources()
   }, [])
 
-  const confirmDelete = (
-    resource
-  ) => {
-    setDeleteTarget(resource)
+  const handleDelete = async () => {
+    try {
+      setDeleteLoading(true)
+      await resourceApi.delete(deleteTarget.id)
+      setSuccessMsg(`"${deleteTarget.name}" deleted successfully.`)
+      setDeleteTarget(null)
+      fetchResources()
+    } catch {
+      setError('Failed to delete resource.')
+    } finally {
+      setDeleteLoading(false)
+    }
   }
 
-  const cancelDelete = () => {
-    setDeleteTarget(null)
-  }
-
-  const handleDelete = () => {
-    setDeleteLoading(true)
-
-    resourceApi
-      .delete(deleteTarget.id)
-      .then(() => {
-        setSuccessMsg(
-          `"${deleteTarget.name}" deleted successfully.`
-        )
-
-        setDeleteTarget(null)
-
-        fetchResources()
-
-        setTimeout(() => {
-          setSuccessMsg(null)
-        }, 3000)
+  const handleSearch = async () => {
+    try {
+      setLoading(true)
+      const res = await resourceApi.advancedSearch({
+        query: searchTerm,
+        ...searchFilters,
       })
-      .catch(() => {
-        setError(
-          'Failed to delete resource.'
-        )
-      })
-      .finally(() =>
-        setDeleteLoading(false)
-      )
+      setResources(res.data || [])
+    } catch {
+      setError('Search failed.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const toggleFavorite = (
-    id
-  ) => {
-    setFavorites((prev) =>
-      prev.includes(id)
-        ? prev.filter(
-            (x) => x !== id
-          )
-        : [...prev, id]
-    )
-  }
-
-  const exportCSV = () => {
-    const rows = resources.map(
-      (r) => ({
-        Name: r.name,
-        Type: r.type,
-        Location: r.location,
-        Capacity: r.capacity,
-        Status: r.status,
-      })
-    )
-
-    const csv = [
-      Object.keys(
-        rows[0] || {}
-      ).join(','),
-      ...rows.map((r) =>
-        Object.values(r).join(',')
-      ),
-    ].join('\n')
-
-    const blob =
-      new Blob([csv], {
-        type: 'text/csv',
-      })
-
-    const url =
-      URL.createObjectURL(
-        blob
-      )
-
-    const a =
-      document.createElement(
-        'a'
-      )
-
-    a.href = url
-    a.download =
-      'resources.csv'
-    a.click()
-  }
-
-  const formatTime = (
-    time
-  ) => {
-    if (!time) return '—'
-    return time.substring(0, 5)
-  }
-
-  const handleBookingClick = (resource) => {
-    setSuccessMsg(`Booking initiated for "${resource.name}". Contact admin for details.`)
-    
-    setTimeout(() => {
-      setSuccessMsg(null)
-    }, 3000)
-  }
-
-  const filteredAndSortedResources = resources
-    .filter(resource => 
-      resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.type.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let aValue, bValue
-      
-      switch(sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
-          break
-        case 'type':
-          aValue = a.type
-          bValue = b.type
-          break
-        case 'capacity':
-          aValue = Number(a.capacity) || 0
-          bValue = Number(b.capacity) || 0
-          break
-        case 'status':
-          aValue = a.status
-          bValue = b.status
-          break
-        default:
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
+  const clearFilters = () => {
+    setSearchFilters({
+      name: '',
+      type: '',
+      status: '',
+      location: '',
+      minCapacity: '',
+      maxCapacity: '',
     })
+    setSearchTerm('')
+    fetchResources()
+  }
+
+  // ✅ FIXED SORT (no mutation)
+  const sortedResources = [...resources].sort((a, b) => {
+    let aValue = a[sortBy]
+    let bValue = b[sortBy]
+
+    if (typeof aValue === 'string') aValue = aValue.toLowerCase()
+    if (typeof bValue === 'string') bValue = bValue.toLowerCase()
+
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1
+    } else {
+      return aValue < bValue ? 1 : -1
+    }
+  })
 
   return (
-    <div
-      className={`resource-list-page ${
-        darkMode
-          ? 'dark-ui'
-          : ''
-      }`}
-    >
+    <div className="resource-list-page">
+      
       {/* HEADER */}
       <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            Campus Resources
-          </h1>
-
-          <p className="page-subtitle">
-            Manage university
-            resources smartly
-          </p>
-        </div>
-
-        <div className="page-header-actions">
-          <button
-            className="action-btn"
-            onClick={() =>
-              setDarkMode(
-                !darkMode
-              )
-            }
-          >
-            {darkMode
-              ? '☀ Light'
-              : '🌙 Dark'}
-          </button>
-
-          <button
-            className="action-btn"
-            onClick={
-              exportCSV
-            }
-          >
-            📊 Export
-          </button>
-
-          <Link
-            to="/resources/add"
-            className="btn btn-primary"
-          >
-            ➕ Add Resource
-          </Link>
-        </div>
+        <h1>Campus Resources</h1>
+        <Link to="/resources/add" className="btn btn-primary">
+          ➕ Add Resource
+        </Link>
       </div>
 
       {/* ALERTS */}
-      {successMsg && (
-        <div className="alert alert-success">
-          {successMsg}
-        </div>
-      )}
+      {successMsg && <p className="success">{successMsg}</p>}
+      {error && <p className="error">{error}</p>}
 
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
+      {/* SEARCH */}
+      <div className="search-box">
+        <input
+          type="text"
+          placeholder="Search resources..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
-      {/* STATS */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>
-            {
-              resources.length
-            }
-          </h3>
-          <p>
-            Total Resources
-          </p>
-        </div>
-
-        <div className="stat-card">
-          <h3>
-            {
-              resources.filter(
-                (
-                  r
-                ) =>
-                  r.status ===
-                  'WORKING'
-              ).length
-            }
-          </h3>
-          <p>Working</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>
-            {
-              resources.filter(
-                (
-                  r
-                ) =>
-                  r.status ===
-                  'OUT_OF_SERVICE'
-              ).length
-            }
-          </h3>
-          <p>
-            Out of Service
-          </p>
-        </div>
-
-        <div className="stat-card">
-          <h3>
-            {resources.length >
-            0
-              ? Math.round(
-                  resources.reduce(
-                    (
-                      sum,
-                      r
-                    ) =>
-                      sum +
-                      Number(
-                        r.capacity ||
-                          0
-                      ),
-                    0
-                  ) /
-                    resources.length
-                )
-              : 0}
-          </h3>
-          <p>
-            Avg Capacity
-          </p>
-        </div>
+        <button onClick={handleSearch}>Search</button>
+        <button onClick={clearFilters}>Clear</button>
       </div>
 
-      {/* SEARCH AND FILTER CONTROLS */}
-      <div className="search-sort-controls">
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="🔍 Search resources by name, location, or type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        
-        <div className="sort-controls">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="sort-select"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="type">Sort by Type</option>
-            <option value="capacity">Sort by Capacity</option>
-            <option value="status">Sort by Status</option>
-          </select>
-          
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="sort-order-btn"
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
+      {/* FILTERS */}
+      <div className="filters">
+        <select onChange={(e) =>
+          setSearchFilters({ ...searchFilters, type: e.target.value })
+        }>
+          <option value="">All Types</option>
+          <option value="LECTURE_HALL">Lecture Hall</option>
+          <option value="COMPUTER_LAB">Computer Lab</option>
+          <option value="MEETING_ROOM">Meeting Room</option>
+        </select>
+
+        <input
+          type="number"
+          placeholder="Min Capacity"
+          onChange={(e) =>
+            setSearchFilters({ ...searchFilters, minCapacity: e.target.value })
+          }
+        />
       </div>
 
-      <p className="result-count">
-        Showing{' '}
-        {
-          filteredAndSortedResources.length
-        }{' '}
-        of {resources.length} resources
-      </p>
+      {/* SORT */}
+      <div className="sort">
+        <select onChange={(e) => setSortBy(e.target.value)}>
+          <option value="name">Name</option>
+          <option value="capacity">Capacity</option>
+        </select>
+
+        <button onClick={() =>
+          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+        }>
+          {sortOrder === 'asc' ? '↑' : '↓'}
+        </button>
+      </div>
 
       {/* CONTENT */}
       {loading ? (
-        <p>
-          Loading
-          resources...
-        </p>
-      ) : filteredAndSortedResources.length ===
-        0 ? (
-        <p>
-          {searchTerm ? 'No resources match your search.' : 'No resources found.'}
-        </p>
+        <p>Loading...</p>
+      ) : sortedResources.length === 0 ? (
+        <p>No resources found.</p>
       ) : (
-        <div
-          className="resources-container"
-        >
-          {filteredAndSortedResources.map(
-            (
-              resource
-            ) => (
+        <div className="resource-grid">
+          {sortedResources.map((r) => (
+            <div key={r.id} className="card">
+
               <div
-                key={
-                  resource.id
-                }
-                className="resource-card"
+                className="type-badge"
+                style={{ background: TYPE_COLORS[r.type] }}
               >
-                <button
-                  className="fav-btn"
-                  onClick={() =>
-                    toggleFavorite(
-                      resource.id
-                    )
-                  }
-                >
-                  {favorites.includes(
-                    resource.id
-                  )
-                    ? '⭐'
-                    : '☆'}
+                {TYPE_ICONS[r.type]} {TYPE_LABELS[r.type]}
+              </div>
+
+              <h3>{r.name}</h3>
+              <p>{r.location}</p>
+              <p>Capacity: {r.capacity}</p>
+              <p>Status: {r.status}</p>
+
+              <div className="actions">
+                <button onClick={() =>
+                  navigate(`/resources/edit/${r.id}`)
+                }>
+                  Edit
                 </button>
 
-                <div
-                  className="resource-type-badge"
-                  style={{
-                    backgroundColor:
-                      (
-                        TYPE_COLORS[
-                          resource
-                            .type
-                        ] ||
-                        '#ddd'
-                      ) +
-                      '20',
-                    color:
-                      TYPE_COLORS[
-                        resource
-                          .type
-                      ] ||
-                      '#333',
-                  }}
-                >
-                  {
-                    TYPE_ICONS[
-                      resource
-                        .type
-                    ]
-                  }{' '}
-                  {TYPE_LABELS[
-                    resource
-                      .type
-                  ] ||
-                    resource.type}
-                </div>
-
-                <h3>
-                  {
-                    resource.name
-                  }
-                </h3>
-
-                <p>
-                  {
-                    resource.location
-                  }
-                </p>
-
-                <p>
-                  Capacity:{' '}
-                  {
-                    resource.capacity
-                  }
-                </p>
-
-                <p>
-                  {formatTime(
-                    resource.availableStartTime
-                  )}{' '}
-                  -
-                  {formatTime(
-                    resource.availableEndTime
-                  )}
-                </p>
-
-                <div className="status-indicator">
-                  <span className={`status-dot ${resource.status === 'WORKING' ? 'status-working' : 'status-out-of-service'}`}></span>
-                  {resource.status === 'WORKING' ? 'Working' : 'Out of Service'}
-                </div>
-
-                {resource.description && (
-                  <p>
-                    {
-                      resource.description
-                    }
-                  </p>
-                )}
-
-                <div className="resource-card-actions">
-                  <button
-                    className="booking-card-btn"
-                    onClick={() =>
-                      handleBookingClick(resource)
-                    }
-                  >
-                    📅 Book
-                  </button>
-                  
-                  <button
-                    onClick={() =>
-                      navigate(
-                        `/resources/edit/${resource.id}`
-                      )
-                    }
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      confirmDelete(
-                        resource
-                      )
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
+                <button onClick={() =>
+                  setDeleteTarget(r)
+                }>
+                  Delete
+                </button>
               </div>
-            )
-          )}
+
+            </div>
+          ))}
         </div>
       )}
 
       {/* DELETE MODAL */}
       {deleteTarget && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>
-              Delete Resource
-            </h2>
-
-            <p>
-              Are you sure
-              you want to
-              delete
-              <strong>
-                {' '}
-                {
-                  deleteTarget.name
-                }{' '}
-              </strong>
-              ?
-            </p>
-
-            <div className="modal-actions">
-              <button
-                onClick={
-                  cancelDelete
-                }
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={
-                  handleDelete
-                }
-                disabled={
-                  deleteLoading
-                }
-              >
-                {deleteLoading
-                  ? 'Deleting...'
-                  : 'Delete'}
-              </button>
-            </div>
-          </div>
+        <div className="modal">
+          <p>Delete {deleteTarget.name}?</p>
+          <button onClick={handleDelete}>Yes</button>
+          <button onClick={() => setDeleteTarget(null)}>No</button>
         </div>
       )}
     </div>
   )
 }
 
-export default ResourceListPage
+export default ResourceListPage;

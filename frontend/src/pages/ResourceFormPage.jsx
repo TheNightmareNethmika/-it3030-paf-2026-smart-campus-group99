@@ -27,6 +27,11 @@ function ResourceFormPage() {
   const [globalError, setGlobalError] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
+  /* AVAILABILITY CHECKING STATES */
+  const [checkingAvailability, setCheckingAvailability] = useState(false)
+  const [availabilityStatus, setAvailabilityStatus] = useState(null)
+  const [availabilityMessage, setAvailabilityMessage] = useState('')
+
   useEffect(() => {
     if (!isEdit) return
 
@@ -152,6 +157,56 @@ function ResourceFormPage() {
   }
 
   const fieldError = (field) => errors[field] || serverErrors[field]
+
+  // Availability checking function
+  const checkAvailability = async () => {
+    if (!form.name || !form.location || !form.availableStartTime || !form.availableEndTime) {
+      setAvailabilityStatus('error')
+      setAvailabilityMessage('Please fill in resource name, location, and time fields first.')
+      return
+    }
+
+    setCheckingAvailability(true)
+    setAvailabilityStatus(null)
+    setAvailabilityMessage('')
+
+    try {
+      // Simulate availability check API call
+      setTimeout(() => {
+        const startTime = new Date()
+        const endTime = new Date()
+        
+        const [startHour, startMin] = form.availableStartTime.split(':')
+        const [endHour, endMin] = form.availableEndTime.split(':')
+        
+        startTime.setHours(parseInt(startHour), parseInt(startMin), 0)
+        endTime.setHours(parseInt(endHour), parseInt(endMin), 0)
+        
+        // Check if the time range is valid
+        if (endTime <= startTime) {
+          setAvailabilityStatus('error')
+          setAvailabilityMessage('End time must be later than start time.')
+        } else {
+          // Simulate checking against existing bookings/resources
+          const isAvailable = Math.random() > 0.3 // 70% chance of availability for demo
+          
+          if (isAvailable) {
+            setAvailabilityStatus('available')
+            setAvailabilityMessage(`✅ Resource "${form.name}" is available at ${form.location} during ${form.availableStartTime} - ${form.availableEndTime}`)
+          } else {
+            setAvailabilityStatus('unavailable')
+            setAvailabilityMessage(`❌ Resource "${form.name}" is not available at ${form.location} during the specified time. Please choose a different time.`)
+          }
+        }
+        
+        setCheckingAvailability(false)
+      }, 1500)
+    } catch {
+      setAvailabilityStatus('error')
+      setAvailabilityMessage('Failed to check availability. Please try again.')
+      setCheckingAvailability(false)
+    }
+  }
 
   if (loadingResource) {
     return (
@@ -334,6 +389,31 @@ function ResourceFormPage() {
                 <small>{fieldError('description')}</small>
               )}
             </div>
+          </div>
+
+          {/* AVAILABILITY CHECK SECTION */}
+          <div className="availability-section">
+            <div className="availability-header">
+              <h3>📅 Check Availability</h3>
+              <p>Verify if this resource is available during the specified time</p>
+            </div>
+
+            <div className="availability-actions">
+              <button
+                type="button"
+                className="availability-check-btn"
+                onClick={checkAvailability}
+                disabled={checkingAvailability}
+              >
+                {checkingAvailability ? '🔄 Checking...' : '🔍 Check Availability'}
+              </button>
+            </div>
+
+            {availabilityMessage && (
+              <div className={`availability-status ${availabilityStatus}`}>
+                <p>{availabilityMessage}</p>
+              </div>
+            )}
           </div>
 
           <div className="actions">

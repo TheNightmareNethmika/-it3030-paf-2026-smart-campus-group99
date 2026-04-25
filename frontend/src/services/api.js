@@ -24,6 +24,11 @@ export const resourceApi = {
   create: (data) => apiClient.post('/resources', data),
   update: (id, data) => apiClient.put(`/resources/${id}`, data),
   delete: (id) => apiClient.delete(`/resources/${id}`),
+  
+  // Advanced search endpoints
+  advancedSearch: (searchRequest) => apiClient.post('/resources/search/advanced', searchRequest),
+  getSearchSuggestions: (query) => apiClient.get('/resources/search/suggestions', { params: { query } }),
+  parseQuery: (query) => apiClient.get('/resources/search/parse', { params: { query } }),
 }
 
 export default apiClient

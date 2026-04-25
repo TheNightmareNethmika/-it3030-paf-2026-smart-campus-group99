@@ -1,10 +1,13 @@
 package com.paf.helpdesk.controller;
 
+import com.paf.helpdesk.dto.AdvancedSearchRequestDTO;
 import com.paf.helpdesk.dto.ResourceRequestDTO;
 import com.paf.helpdesk.dto.ResourceResponseDTO;
+import com.paf.helpdesk.dto.SearchSuggestionDTO;
 import com.paf.helpdesk.entity.ResourceStatus;
 import com.paf.helpdesk.entity.ResourceType;
 import com.paf.helpdesk.service.ResourceService;
+import com.paf.helpdesk.service.SmartSearchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import java.util.Map;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final SmartSearchService smartSearchService;
 
     @GetMapping
     public ResponseEntity<List<ResourceResponseDTO>> getAllResources(
@@ -57,5 +61,39 @@ public class ResourceController {
     public ResponseEntity<Map<String, String>> deleteResource(@PathVariable Long id) {
         resourceService.deleteResource(id);
         return ResponseEntity.ok(Map.of("message", "Resource deleted successfully"));
+    }
+
+    // Advanced Search Endpoints
+    @PostMapping("/search/advanced")
+    public ResponseEntity<List<ResourceResponseDTO>> advancedSearch(@Valid @RequestBody AdvancedSearchRequestDTO searchRequest) {
+        // Parse natural language query if provided
+        if (searchRequest.getQuery() != null && !searchRequest.getQuery().trim().isEmpty()) {
+            AdvancedSearchRequestDTO parsedRequest = smartSearchService.parseNaturalLanguageQuery(searchRequest.getQuery());
+            // Merge parsed request with original request
+            if (searchRequest.getName() == null) searchRequest.setName(parsedRequest.getName());
+            if (searchRequest.getType() == null) searchRequest.setType(parsedRequest.getType());
+            if (searchRequest.getStatus() == null) searchRequest.setStatus(parsedRequest.getStatus());
+            if (searchRequest.getLocation() == null) searchRequest.setLocation(parsedRequest.getLocation());
+            if (searchRequest.getMinCapacity() == null) searchRequest.setMinCapacity(parsedRequest.getMinCapacity());
+            if (searchRequest.getMaxCapacity() == null) searchRequest.setMaxCapacity(parsedRequest.getMaxCapacity());
+            if (searchRequest.getAvailableFrom() == null) searchRequest.setAvailableFrom(parsedRequest.getAvailableFrom());
+            if (searchRequest.getAvailableTo() == null) searchRequest.setAvailableTo(parsedRequest.getAvailableTo());
+            if (searchRequest.getTimeOfDay() == null) searchRequest.setTimeOfDay(parsedRequest.getTimeOfDay());
+        }
+
+        List<ResourceResponseDTO> results = resourceService.advancedSearch(searchRequest);
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/search/suggestions")
+    public ResponseEntity<List<SearchSuggestionDTO>> getSearchSuggestions(@RequestParam String query) {
+        List<SearchSuggestionDTO> suggestions = resourceService.getSearchSuggestions(query);
+        return ResponseEntity.ok(suggestions);
+    }
+
+    @GetMapping("/search/parse")
+    public ResponseEntity<AdvancedSearchRequestDTO> parseQuery(@RequestParam String query) {
+        AdvancedSearchRequestDTO parsedRequest = smartSearchService.parseNaturalLanguageQuery(query);
+        return ResponseEntity.ok(parsedRequest);
     }
 }
