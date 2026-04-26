@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Optional;
 
 @Component
@@ -33,14 +34,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                                         Authentication authentication) throws IOException, ServletException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
-
-        if (email == null) {
+        String raw = oAuth2User.getAttribute("email");
+        if (raw == null || raw.isBlank()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Google account has no email address");
             return;
         }
+        String email = raw.trim().toLowerCase(Locale.ROOT);
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
         if (userOptional.isEmpty()) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "User account could not be resolved");
             return;

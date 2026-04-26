@@ -18,6 +18,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String name;
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;

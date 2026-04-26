@@ -102,7 +102,7 @@ const AdminDashboard = () => {
                         <div className="p-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
                                 { title: 'Resource Management', text: 'Manage physical spaces, equipment, and campus inventory records.', path: '/admin/resources' },
-                                { title: 'Ticket Management',   text: 'Track service issues, escalations, and operational response status.', path: '/admin/tickets' },
+                                { title: 'Ticket Management',   text: 'Track service issues, escalations, and operational response status.', path: '/m3/admin' },
                                 { title: 'Booking Management',  text: 'Review demand, monitor daily bookings, and maintain availability.', path: '/admin/bookings' },
                                 { title: 'User Management',     text: 'Manage member accounts, assign roles, and control platform access.', path: '/admin/users', highlight: true },
                             ].map((module) => (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import AdminSidebar from '../components/AdminSidebar';
@@ -149,9 +150,12 @@ const UserDashboard = () => {
                                             <p className="text-xl font-black text-white leading-tight mb-1 tracking-tighter">Reserve Campus Assets in Seconds.</p>
                                             <p className="text-slate-500 text-xs font-medium">Labs, Assets, and Meeting Rooms.</p>
                                         </div>
-                                        <button className="px-8 py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white hover:text-indigo-700 transition-all transform hover:scale-105 shadow-lg">
+                                        <Link
+                                            to="/book"
+                                            className="px-8 py-3 bg-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white hover:text-indigo-700 transition-all transform hover:scale-105 shadow-lg no-underline inline-block text-center"
+                                        >
                                             Start Booking
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

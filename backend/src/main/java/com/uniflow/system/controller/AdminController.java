@@ -41,7 +41,8 @@ public class AdminController {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
         }
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        user.setEmail(user.getEmail().trim().toLowerCase());
+        if (userRepository.findByEmailIgnoreCase(user.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "A user with this email already exists"));
         }
         if (user.getPassword() == null || user.getPassword().isBlank()) {
@@ -56,8 +57,7 @@ public class AdminController {
 
     @PutMapping("/users/{id}/role")
     public ResponseEntity<?> updateUserRole(@PathVariable String id, @RequestBody Map<String, String> body) {
-        java.util.Optional<User> userOpt = userRepository.findById(id);
-        if (userOpt.isEmpty()) {
+        if (userRepository.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         String roleValue = body.get("role");
@@ -65,10 +65,14 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("error", "Role value is required"));
         }
         try {
-            User user = userOpt.get();
-            user.setRole(Role.valueOf(roleValue.toUpperCase()));
-            userRepository.save(user);
-            return ResponseEntity.ok(user);
+            Role newRole = Role.valueOf(roleValue.toUpperCase());
+            // Update only the role so we never resave a User with a missing password (detached/JSON user edge cases).
+            int updated = userRepository.updateRoleById(id, newRole);
+            if (updated == 0) {
+                return ResponseEntity.notFound().build();
+            }
+            User fresh = userRepository.findById(id).orElseThrow();
+            return ResponseEntity.ok(fresh);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleValue));
         }

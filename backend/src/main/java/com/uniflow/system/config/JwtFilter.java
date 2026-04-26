@@ -36,13 +36,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 String email = jwtUtil.extractEmail(token);
                 String role = jwtUtil.extractRole(token);
 
-                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // Create authority with ROLE_ prefix for standard Spring Security role check
+                if (email != null) {
+                    // Always set the principal from a valid JWT. Do not require getAuthentication() == null:
+                    // an AnonymousAuthenticationToken is already set earlier in the chain, and skipping here
+                    // would leave /auth/me and all @AuthenticationPrincipal values wrong for API calls.
                     SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
-                    
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             email, null, Collections.singletonList(authority));
-                    
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }

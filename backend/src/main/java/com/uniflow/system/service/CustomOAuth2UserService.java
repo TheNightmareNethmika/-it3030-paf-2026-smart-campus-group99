@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -23,19 +24,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        String email = oAuth2User.getAttribute("email");
+        String raw = oAuth2User.getAttribute("email");
+        if (raw == null || raw.isBlank()) {
+            return oAuth2User;
+        }
+        // Match password-based accounts and seeded admin (stored lowercased)
+        String email = raw.trim().toLowerCase(Locale.ROOT);
 
-        if (email != null) {
-            Optional<User> userOptional = userRepository.findByEmail(email);
-            if (userOptional.isEmpty()) {
-                // Create new user if first login
-                String name = oAuth2User.getAttribute("name");
-                if (name == null) {
-                    name = email.split("@")[0];
-                }
-                User newUser = new User(name, email, "OAUTH_LOGIN", Role.USER);
-                userRepository.save(newUser);
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
+        if (userOptional.isEmpty()) {
+            String name = oAuth2User.getAttribute("name");
+            if (name == null || name.isBlank()) {
+                name = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
             }
+            userRepository.save(new User(name.trim(), email, "OAUTH_LOGIN", Role.USER));
         }
 
         return oAuth2User;

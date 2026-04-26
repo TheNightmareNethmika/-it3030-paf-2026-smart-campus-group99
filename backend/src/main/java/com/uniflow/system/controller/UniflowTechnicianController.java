@@ -8,14 +8,19 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Maintenance tasks for campus technicians (UniFlow). Coexists with
+ * {@link com.paf.helpdesk.controller.HelpdeskTechnicianController} (issue stack) on the same
+ * <code>/api/technician</code> path prefix but different sub-paths.
+ */
 @RestController
 @RequestMapping("/api/technician")
 @CrossOrigin(origins = "${FRONTEND_URL:http://localhost:3100}")
-public class TechnicianController {
+public class UniflowTechnicianController {
 
     private final MaintenanceService maintenanceService;
 
-    public TechnicianController(MaintenanceService maintenanceService) {
+    public UniflowTechnicianController(MaintenanceService maintenanceService) {
         this.maintenanceService = maintenanceService;
     }
 
@@ -27,7 +32,7 @@ public class TechnicianController {
 
     @PutMapping("/tasks/{id}/status")
     public ResponseEntity<MaintenanceRequest> updateTaskStatus(
-            @PathVariable String id, 
+            @PathVariable String id,
             @RequestParam MaintenanceRequest.MaintenanceStatus status) {
         return ResponseEntity.ok(maintenanceService.updateStatus(id, status));
     }

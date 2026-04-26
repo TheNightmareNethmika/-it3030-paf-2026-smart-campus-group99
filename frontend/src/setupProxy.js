@@ -27,7 +27,8 @@ module.exports = function (app) {
         pathname.startsWith('/api') ||
         pathname.startsWith('/auth') ||
         pathname.startsWith('/oauth2') ||
-        pathname.startsWith('/login/oauth2'),
+        pathname.startsWith('/login/oauth2') ||
+        pathname.startsWith('/uploads'),
       changeOrigin: true,
       secure: false,
       logLevel: 'warn',

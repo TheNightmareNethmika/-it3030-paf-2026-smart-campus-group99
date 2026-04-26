@@ -59,10 +59,13 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/**",
                     "/login/**",
+                    "/login/oauth2/**",
                     "/oauth2/**",
                     "/favicon.ico",
                     "/error"
                 ).permitAll()
+                // Served as static files; <img> does not send Authorization header
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")
                 .requestMatchers("/user/**").hasRole("USER")

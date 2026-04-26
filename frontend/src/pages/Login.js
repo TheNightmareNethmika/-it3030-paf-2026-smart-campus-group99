@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { getGoogleAuthorizationUrl } from '../utils/oauth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -140,7 +141,7 @@ const Login = () => {
                     </div>
 
                     <a
-                        href="/oauth2/authorization/google"
+                        href={getGoogleAuthorizationUrl()}
                         className="btn btn-outline w-full !py-2.5 !text-sm bg-white hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                     >
                         <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">

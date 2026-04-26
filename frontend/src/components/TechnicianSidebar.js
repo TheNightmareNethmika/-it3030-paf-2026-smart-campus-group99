@@ -10,17 +10,37 @@ const TechnicianSidebar = () => {
     <aside className="fixed left-0 top-[72px] bottom-0 w-72 bg-[#CBD5E1] border-r border-slate-400/20 hidden lg:flex flex-col z-[50]">
       <div className="flex-1 py-10 px-6 space-y-4 overflow-y-auto">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-4">Technician Panel</p>
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl font-bold transition-all duration-200 group text-[#64748B] opacity-60 cursor-not-allowed"
+        <NavLink
+          to="/m3/technician"
+          className={({ isActive }) =>
+            `w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl font-bold transition-all duration-200 group ${
+              isActive
+                ? 'bg-[#5B5FEF] text-white shadow-lg shadow-indigo-100 translate-x-1'
+                : 'text-[#64748B] hover:bg-white/40 hover:text-[#0F172A] hover:translate-x-1'
+            }`
+          }
         >
-          <svg className="w-5 h-5 transition-colors duration-300 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-          <span className="text-sm tracking-tight">Assigned Tasks</span>
-        </button>
+          {({ isActive }) => (
+            <>
+              <svg
+                className={`w-5 h-5 transition-colors duration-300 ${
+                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              <span className="text-sm tracking-tight">Assigned Tasks</span>
+            </>
+          )}
+        </NavLink>
         {menuItems.map((item, index) => (
           <NavLink
             key={index}

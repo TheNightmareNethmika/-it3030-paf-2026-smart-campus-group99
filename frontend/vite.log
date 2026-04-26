@@ -46,3 +46,19 @@
 [2m1:06:18 AM[22m [36m[1m[vite][22m[39m [32m.env.development changed, restarting server...[39m
 [2m1:06:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
 [2m1:06:18 AM[22m [36m[1m[vite][22m[39m server restarted.
+[2m2:12:10 AM[22m [36m[1m[vite][22m[39m [32m.env.development changed, restarting server...[39m
+[2m2:12:11 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because lockfile has changed
+[2m2:12:11 AM[22m [36m[1m[vite][22m[39m server restarted.
+[2m2:12:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m2:13:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mbuild/index.html[22m
+[2m2:13:01 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m2:13:01 AM[22m [36m[1m[vite][22m[39m [32m.env.development changed, restarting server...[39m
+[2m2:13:02 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[2m2:13:02 AM[22m [36m[1m[vite][22m[39m server restarted.
+[2m2:13:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mpublic/index.html[22m
+[2m2:25:04 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mbuild/index.html[22m
+[2m7:26:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mbuild/index.html[22m
+[2m7:32:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mbuild/index.html[22m
+[2m7:32:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mbuild/index.html[22m
+[2m8:34:02 AM[22m [36m[1m[vite][22m[39m [32m.env.development changed, restarting server...[39m
+[2m8:34:02 AM[22m [36m[1m[vite][22m[39m server restarted.

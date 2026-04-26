@@ -46,6 +46,20 @@ public class AuthController {
             return response;
         }
 
+        // Help debug empty password in DB (e.g. resaving User without write-only password) — still 401
+        Optional<User> maybe = authService.getUserByEmail(request.getEmail() != null ? request.getEmail() : "");
+        if (maybe.isPresent()) {
+            String p = maybe.get().getPassword();
+            if (p == null || p.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "This account has no password stored. Use Google if you signed up with Google, or ask an admin to set your password again."));
+            }
+            if ("OAUTH_LOGIN".equalsIgnoreCase(p.trim())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "This account uses Google. Click \"Continue with Google\" on the login page."));
+            }
+        }
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Invalid email or password"));
     }
