@@ -10,8 +10,10 @@ import com.paf.helpdesk.exception.ResourceNotFoundException;
 import com.paf.helpdesk.exception.UnauthorizedActionException;
 import com.paf.helpdesk.repository.CommentRepository;
 import com.paf.helpdesk.repository.IssueRepository;
+import com.paf.helpdesk.service.InAppNotificationService;
 import com.paf.helpdesk.service.IssueService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,20 +31,26 @@ import java.util.List;
 
 
 @Service
+@Transactional(readOnly = true)
 public class IssueServiceImpl implements IssueService {
 
     private final IssueRepository issueRepository;
     private final CommentRepository commentRepository;
+    private final InAppNotificationService inAppNotificationService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public IssueServiceImpl(IssueRepository issueRepository, CommentRepository commentRepository) {
+    public IssueServiceImpl(IssueRepository issueRepository,
+                            CommentRepository commentRepository,
+                            InAppNotificationService inAppNotificationService) {
         this.issueRepository = issueRepository;
         this.commentRepository = commentRepository;
+        this.inAppNotificationService = inAppNotificationService;
     }
 
     @Override
+    @Transactional
     public IssueResponse createIssue(IssueCreateRequest request, List<MultipartFile> images, String userEmail, String userName) {
         Issue issue = new Issue();
         issue.setTitle(request.getTitle());
@@ -92,6 +100,7 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
+    @Transactional
     public IssueResponse addComment(Long issueId, CommentRequest request, List<MultipartFile> images, String email, String name) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
@@ -109,23 +118,27 @@ public class IssueServiceImpl implements IssueService {
         comment.setText(hasText ? request.getText().trim() : "");
         comment.setCreatedAt(LocalDateTime.now());
         comment.setIssue(issue);
+        comment.setParentCommentId(request.getParentCommentId());
+        comment.setVisibility("PUBLIC");
 
         if (images != null && !images.isEmpty()) {
             comment.setImageUrls(saveCommentImages(images));
         }
 
-        commentRepository.save(comment);
+        Comment savedComment = commentRepository.saveAndFlush(comment);
+        issue.getComments().add(savedComment);
+        inAppNotificationService.onCommentFromReporter(issue, email);
 
-        return mapToIssueResponse(issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId)));
+        return mapToIssueResponse(issue);
     }
 
     @Override
+    @Transactional
     public IssueResponse closeIssue(Long id, String email) {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + id));
 
-        if (!issue.getReporterEmail().equals(email)) {
+        if (!issue.getReporterEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedActionException("You are not allowed to close this issue");
         }
 
@@ -134,24 +147,31 @@ public class IssueServiceImpl implements IssueService {
         }
 
         issue.setStatus("CLOSED");
-        Issue updatedIssue = issueRepository.save(issue);
+        issue.setVisibleToAdmin(false);
 
+        Issue updatedIssue = issueRepository.save(issue);
         return mapToIssueResponse(updatedIssue);
     }
 
     @Override
+    @Transactional
     public void deleteIssue(Long id, String email) {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + id));
 
-        if (!issue.getReporterEmail().equals(email)) {
+        if (!issue.getReporterEmail().equalsIgnoreCase(email)) {
             throw new UnauthorizedActionException("You are not allowed to delete this issue");
+        }
+
+        if (!"CLOSED".equalsIgnoreCase(issue.getStatus())) {
+            throw new IllegalArgumentException("Only closed issues can be deleted.");
         }
 
         issueRepository.delete(issue);
     }
 
     @Override
+    @Transactional
     public void deleteComment(Long issueId, Long commentId, String email) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
@@ -171,6 +191,7 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
+    @Transactional
     public IssueResponse updateComment(Long issueId,
                                        Long commentId,
                                        CommentRequest request,
@@ -304,11 +325,13 @@ public class IssueServiceImpl implements IssueService {
         response.setAssignedTechnicianEmail(issue.getAssignedTechnicianEmail());
         response.setAssignedTeam(issue.getAssignedTeam());
         response.setAssignedAt(issue.getAssignedAt());
+        response.setTechnicianStatus(issue.getTechnicianStatus());
         response.setVisibleToAdmin(issue.isVisibleToAdmin());
 
 
         List<CommentResponse> commentResponses = issue.getComments()
                 .stream()
+                .filter(comment -> !"PRIVATE".equalsIgnoreCase(comment.getVisibility()))
                 .map(this::mapToCommentResponse)
                 .toList();
 
@@ -324,7 +347,9 @@ public class IssueServiceImpl implements IssueService {
         response.setAuthorEmail(comment.getAuthorEmail());
         response.setText(comment.getText());
         response.setCreatedAt(comment.getCreatedAt());
+        response.setParentCommentId(comment.getParentCommentId());
         response.setImageUrls(comment.getImageUrls());
+        response.setVisibility(comment.getVisibility());
         return response;
     }
 }

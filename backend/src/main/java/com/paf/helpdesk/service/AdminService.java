@@ -12,11 +12,17 @@ public interface AdminService {
 
     List<TechnicianResponse> getTechnicians();
 
-    IssueResponse updateIssueStatus(Long issueId, String status);
+    IssueResponse updateIssueStatus(Long issueId, String status, String actorEmail);
 
-    IssueResponse assignTechnician(Long issueId, Long technicianId);
+    IssueResponse assignTechnician(Long issueId, Long technicianId, String actorEmail);
 
-    IssueResponse addAdminComment(Long issueId, String text);
+    IssueResponse unassignTechnician(Long issueId, String actorEmail);
+
+    IssueResponse addAdminComment(Long issueId, String text, Long parentCommentId, String visibility, String actorEmail);
+
+    IssueResponse updateAdminComment(Long issueId, Long commentId, String text);
+
+    void deleteAdminComment(Long issueId, Long commentId);
 
     void deleteResolvedIssue(Long issueId);
 

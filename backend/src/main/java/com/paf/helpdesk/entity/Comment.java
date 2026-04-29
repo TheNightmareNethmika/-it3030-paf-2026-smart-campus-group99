@@ -20,6 +20,8 @@ public class Comment {
     private String text;
 
     private LocalDateTime createdAt;
+    private Long parentCommentId;
+    private String visibility = "PUBLIC";
 
     @ManyToOne
     @JoinColumn(name = "issue_id")
@@ -29,6 +31,7 @@ public class Comment {
     @CollectionTable(name = "comment_images", joinColumns = @JoinColumn(name = "comment_id"))
     @Column(name = "image_url")
     private List<String> imageUrls = new ArrayList<>();
+    
 
     public Comment() {
     }
@@ -87,5 +90,21 @@ public class Comment {
 
     public void setImageUrls(List<String> imageUrls) {
         this.imageUrls = imageUrls;
+    }
+
+    public Long getParentCommentId() {
+        return parentCommentId;
+    }
+
+    public void setParentCommentId(Long parentCommentId) {
+        this.parentCommentId = parentCommentId;
+    }
+
+    public String getVisibility() {
+        return visibility == null || visibility.isBlank() ? "PUBLIC" : visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
     }
 }

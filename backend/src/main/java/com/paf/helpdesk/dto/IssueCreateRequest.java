@@ -27,7 +27,8 @@ public class IssueCreateRequest {
     private String roomNumber;
     private String assetId;
 
-    @Pattern(regexp = "^$|^(?:\\+94|0)?7\\d{8}$", message = "Invalid contact number")
+    /** Optional; if provided, 7–20 chars of digits, spaces, +, -, () — not SL-only. */
+    @Pattern(regexp = "^$|^[+\\d()\\-\\s]{7,20}$", message = "Invalid contact number (7–20 characters)")
     private String contactNumber;
 
     @NotNull(message = "Incident date is required")

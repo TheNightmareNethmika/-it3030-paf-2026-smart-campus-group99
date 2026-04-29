@@ -35,6 +35,7 @@ public class Issue {
     private String assignedTechnicianEmail;
     private String assignedTeam;
     private LocalDateTime assignedAt;
+    private String technicianStatus;
     private boolean visibleToAdmin = true;
 
     @OneToMany(mappedBy = "issue", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -214,6 +215,14 @@ public class Issue {
 
     public void setAssignedAt(LocalDateTime assignedAt) {
         this.assignedAt = assignedAt;
+    }
+
+    public String getTechnicianStatus() {
+        return technicianStatus;
+    }
+
+    public void setTechnicianStatus(String technicianStatus) {
+        this.technicianStatus = technicianStatus;
     }
 
     public boolean isVisibleToAdmin() {

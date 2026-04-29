@@ -10,6 +10,8 @@ public class CommentResponse {
     private String authorEmail;
     private String text;
     private LocalDateTime createdAt;
+    private Long parentCommentId;
+    private String visibility;
     private List<String> imageUrls;
 
     public CommentResponse() {
@@ -61,5 +63,21 @@ public class CommentResponse {
 
     public void setImageUrls(List<String> imageUrls) {
         this.imageUrls = imageUrls;
+    }
+
+    public Long getParentCommentId() {
+        return parentCommentId;
+    }
+
+    public void setParentCommentId(Long parentCommentId) {
+        this.parentCommentId = parentCommentId;
+    }
+
+    public String getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
     }
 }
